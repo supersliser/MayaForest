@@ -10,7 +10,7 @@ def createBranch(i, dec, branch, num):
 		cmds.parent(newName, branch, r=1, add=1)
 
 		for i in range(10, ySub * 2 * 10, 10):
-			cmds.polySelect(, el=i)
+			cmds.polySelect(newName, el=i)
 			cmds.polyMoveEdge(tx=i * (r.random() * Ta * 2 - Ta), tz=i * (r.random() * Ta * 2 - Ta), sz=i * (r.random() * Sa + 0.8), sx=i * (r.random() * Sa + 0.8))
 
 		cmds.select(cl=1)
