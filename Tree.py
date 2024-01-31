@@ -2,25 +2,30 @@ import maya.cmds as cmds
 import random as r
 import math as m
 
-def createBranch(i, dec, branch, num):
+def createBranch(i, dec, branch, num, height):
 	if r.random() < i:
 		newName = branch + "_Branch" + str(num)
 		print("Creating branch: " + newName)
 		cmds.polyCylinder(n=newName, sx=1, sy=ySub * i + 1, sz=1, radius=radius * (1 - i), height=height * (1 - i))
-		cmds.parent(newName, branch, r=1, add=1)
-
-		for i in range(10, ySub * 2 * 10, 10):
-			cmds.polySelect(newName, el=i)
-			cmds.polyMoveEdge(tx=i * (r.random() * Ta * 2 - Ta), tz=i * (r.random() * Ta * 2 - Ta), sz=i * (r.random() * Sa + 0.8), sx=i * (r.random() * Sa + 0.8))
-
-		cmds.select(cl=1)
-		cmds.polySmooth(n, dv=2, kb=1)
 
 		cmds.select(newName)
 		cmds.rotate("45deg", 0, 0, r=1)
-		cmds.move(r=1, y=i * 50, os=1)
+		#+ r.random() * (ySub*2*10 - height)
+		x, y, z = cmds.pointPosition(branch + ".vtx[" + str(m.floor(height * 2 * 10 )) + "]", w=True)
+		cmds.move(x, y, z)
+		#cmds.move(i * height, y=1, r=1)
 		cmds.select(cl=1)
-		createBranch(i - dec, dec, newName, 1)
+
+		cmds.parent(newName, branch, r=1, add=1)
+
+		# for i in range(10, ySub * 2 * 10, 10):
+		# 	cmds.polySelect(newName, el=i)
+		# 	cmds.polyMoveEdge(tx=i * (r.random() * Ta * 2 - Ta), tz=i * (r.random() * Ta * 2 - Ta), sz=i * (r.random() * Sa + 0.8), sx=i * (r.random() * Sa + 0.8))
+
+		# cmds.select(cl=1)
+		# cmds.polySmooth(n, dv=2, kb=1)
+
+		createBranch(i - dec, dec, newName, 1, height)
 
 cmds.file( f=True, new=True )
 
@@ -43,4 +48,4 @@ for i in range(10, ySub * 2 * 10, 10):
 cmds.select(cl=1)
 cmds.polySmooth(n, dv=2, kb=1)
 
-createBranch(0.5, 0.1, n, 1)
+createBranch(0.5, 0.1, n, 1, 75)
