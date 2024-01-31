@@ -19,7 +19,7 @@ def set_pivot_to_bottom(obj_name):
 def createBranch(i, dec, branch, high, den):
 	Pointy = PointPlacer()
 	Pointy.generatePoints(branch)
-	Pointy.placePoints(branch)
+	# Pointy.placePoints(branch)
 	num = 0
 	if r.random() < i:
 		Pointy.removePoints(branch, den)
@@ -45,7 +45,7 @@ def createBranch(i, dec, branch, high, den):
 			num+= 1
 	else:
 		for point in Pointy.points:
-			newName = Branch + "_Leaf" + str(num)
+			newName = branch + "_Leaf" + str(num)
 			cmds.instance("Leaf1", n=newName)
 			cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
 			num += 1
@@ -61,15 +61,17 @@ Ta = 0.1
 Sa = 0.5
 Density = 0.1
 
-cmds.delete(n)
+try:
+	cmds.delete(n)
+finally:
 
-cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
-
-for i in range(10, ySub * 2 * 10, 10):
-	cmds.polySelect(n, el=i)
-	cmds.polyMoveEdge(tx=r.random() * Ta * 2 - Ta, tz=r.random() * Ta * 2 - Ta, sz=r.random() * Sa + 0.8, sx=r.random() * Sa + 0.8)
-
-cmds.select(cl=1)
-cmds.polySmooth(n, dv=2, kb=1)
-set_pivot_to_bottom(n)
-createBranch(0.8, 0.2, n, height, Density)
+	cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
+	
+	for i in range(10, ySub * 2 * 10, 10):
+		cmds.polySelect(n, el=i)
+		cmds.polyMoveEdge(tx=r.random() * Ta * 2 - Ta, tz=r.random() * Ta * 2 - Ta, sz=r.random() * Sa + 0.8, sx=r.random() * Sa + 0.8)
+	
+	cmds.select(cl=1)
+	cmds.polySmooth(n, dv=2, kb=1)
+	set_pivot_to_bottom(n)
+	createBranch(0.8, 0.2, n, height, Density)
