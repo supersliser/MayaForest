@@ -28,18 +28,13 @@ class PointPlacer:
         # Compare vertex and target heights
         return vertex_y >= target_height
 
-    def generatePoints(self, baseMesh):
+    def generatePoints(self, baseMesh, density):
         tempPoints = cmds.ls(baseMesh + ".vtx[*]", fl=1)
         for p in tempPoints:
-            self.points.append(cmds.pointPosition(p, w=1))
-
-
-    def removePoints(self, baseMesh, density):
-        tempPoints = self.points
-        for p in tempPoints:
-            if r.random() > density:
+            if r.random() <= density:
                 if self.is_vertex_at_height_percentage(meshName=baseMesh, vertexIndex=tempPoints.index(p), percentage=0.2):
-                    self.points.remove(p)
+                    self.points.append(cmds.pointPosition(p, w=1))
+
 
     def placePoints(self, branch):
         for p in self.points:
