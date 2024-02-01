@@ -59,7 +59,7 @@ ySub = 10
 n = "Trunk"
 Ta = 0.1
 Sa = 0.5
-Density = 0.1
+Density = 0.01
 
 try:
 	cmds.delete(n)
