@@ -36,16 +36,16 @@ def createBranch(i, dec, branch, high, den):
 
 			createBranch(i - dec, dec, newName, high, den)
 			num+= 1
-	# elif branch != "Trunk":
-	# 	Pointy.generatePoints(branch, den)
-	# 	for point in Pointy.points:
-	# 		newName = branch + "_Leaf" + str(num)
-	# 		print("Creating leaf: " + newName)
-	# 		cmds.instance("Leaf1", n=newName)
-	# 		cmds.parent(newName, branch)
-	# 		cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
-	# 		cmds.xform(newName, ro=(str(180 * r.random()) + "deg", str(180 * r.random()) + "deg", str(180 * r.random()) + "deg"))
-	# 		num += 1
+	elif branch != "Trunk":
+		Pointy.generatePoints(branch, 0.1 - den)
+		for point in Pointy.points:
+			newName = branch + "_Leaf" + str(num)
+			print("Creating leaf: " + newName)
+			cmds.instance("Leaf1", n=newName)
+			cmds.parent(newName, branch)
+			cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
+			cmds.xform(newName, ro=(str(180 * r.random()) + "deg", str(180 * r.random()) + "deg", str(180 * r.random()) + "deg"))
+			num += 1
 
 r.seed(1)
 
