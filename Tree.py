@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 import random as r
 import math as m
-import time
+import gc
 
 def set_pivot_to_bottom(obj_name):
     # Get the bounding box of the object
@@ -57,18 +57,18 @@ def createBranch(i, dec, branch, high, den):
 			num += 1
 		# cmds.refresh(f=1)
 		# time.sleep(1)
-	Pointy = None
+	gc.collect()
 # cmds.file( f=True, new=True )
 
 r.seed(1)
 
 radius = 0.5
 height = 50
-ySub = 2
+ySub = 10
 n = "Trunk"
 Ta = 0.1
 Sa = 0.5
-Density = 0.1
+Density = 0.01
 
 cmds.undoInfo(openChunk=True)
 cmds.polyCylinder(n=n, sa=1, sy=ySub, sz=1, radius=radius, height=height)
