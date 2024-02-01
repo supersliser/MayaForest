@@ -64,16 +64,16 @@ r.seed(1)
 
 radius = 0.5
 height = 50
-ySub = 10
+ySub = 2
 n = "Trunk"
 Ta = 0.1
 Sa = 0.5
 Density = 0.1
 
 cmds.undoInfo(openChunk=True)
-cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
+cmds.polyCylinder(n=n, sa=1, sy=ySub, sz=1, radius=radius, height=height)
 pivot = set_pivot_to_bottom(n)
-createBranch(0.2, 0.1, n, height, Density)
+createBranch(0.2, 0.2, n, height, Density)
 
 for i in range(10, ySub * 2 * 10, 10):
 	cmds.polySelect(n, el=i)
