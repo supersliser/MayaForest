@@ -25,7 +25,7 @@ def createBranch(i, dec, branch, high, den):
 		for point in Pointy.points:
 			newName = branch + "_Branch" + str(num)
 			print("Creating branch: " + newName)
-			cmds.polyCylinder(n=newName, sx=1, sy=ySub, sz=1, radius=radius - i, height=high * i)
+			cmds.polyCylinder(n=newName, sx=1, sy=ySub, sz=1, radius=radius - (1 - i), height=high * (1 - i))
 			cmds.parent(newName, branch)
 			pivot = set_pivot_to_bottom(newName)
 			cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1)
@@ -40,6 +40,7 @@ def createBranch(i, dec, branch, high, den):
 			# cmds.select(cl=1)
 			# cmds.polySmooth(n, dv=2, kb=1)
 			createBranch(i - dec, dec, newName, high, den)
+			num+= 1
 	elif branch != "Trunk":
 		Pointy.generatePoints(branch, 1 - den)
 		for point in Pointy.points:
@@ -49,7 +50,7 @@ def createBranch(i, dec, branch, high, den):
 			cmds.parent(newName, branch)
 			cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
 			cmds.xform(newName, ro=(str(180 * r.random()) + "deg", str(180 * r.random()) + "deg", str(180 * r.random()) + "deg"))
-		num += 1
+			num += 1
 # cmds.file( f=True, new=True )
 
 r.seed(1)
@@ -72,4 +73,4 @@ for i in range(10, ySub * 2 * 10, 10):
 cmds.select(cl=1)
 cmds.polySmooth(n, dv=2, kb=1)
 set_pivot_to_bottom(n)
-createBranch(0.2, 0.1, n, height, Density)
+createBranch(0.4, 0.05, n, height, Density)
