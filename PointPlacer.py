@@ -34,6 +34,7 @@ class PointPlacer:
         return self.vertex_y >= self.target_height
 
     def generatePointsAbove(self, baseMesh, density, height):
+        self.points = []
         tempPoints = cmds.ls(baseMesh + ".vtx[*]", fl=1)
         for p in tempPoints:
             if r.random() <= density:
@@ -41,6 +42,7 @@ class PointPlacer:
                     self.points.append(cmds.pointPosition(p, w=1))
 
     def generatePoints(self, baseMesh, density):
+        self.points = []
         tempPoints = cmds.ls(baseMesh + ".vtx[*]", fl=1)
         for p in tempPoints:
             if r.random() <= density:
