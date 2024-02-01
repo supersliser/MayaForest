@@ -1,6 +1,7 @@
 import maya.cmds as cmds
 import random as r
 import math as m
+import time
 
 def set_pivot_to_bottom(obj_name):
     # Get the bounding box of the object
@@ -43,7 +44,7 @@ def createBranch(i, dec, branch, high, den):
 			createBranch(i - dec, dec, newName, high, den)
 			num+= 1
 	elif branch != "Trunk":
-		Pointy.generatePoints(branch, 1 - den)
+		Pointy.generatePoints(branch, den)
 		for point in Pointy.points:
 			newName = branch + "_Leaf" + str(num)
 			print("Creating leaf: " + newName)
@@ -53,6 +54,7 @@ def createBranch(i, dec, branch, high, den):
 			cmds.xform(newName, ro=(str(180 * r.random()) + "deg", str(180 * r.random()) + "deg", str(180 * r.random()) + "deg"))
 			num += 1
 	# cmds.refresh(f=1)
+	# time.sleep(1)
 # cmds.file( f=True, new=True )
 
 r.seed(1)
@@ -68,6 +70,8 @@ Density = 0.01
 
 cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
 
+createBranch(0.4, 0.2, n, height, Density)
+
 for i in range(10, ySub * 2 * 10, 10):
 	cmds.polySelect(n, el=i)
 	cmds.polyMoveEdge(tx=r.random() * Ta * 2 - Ta, tz=r.random() * Ta * 2 - Ta, sz=r.random() * Sa + 0.8, sx=r.random() * Sa + 0.8)
@@ -75,4 +79,3 @@ for i in range(10, ySub * 2 * 10, 10):
 cmds.select(cl=1)
 cmds.polySmooth(n, dv=2, kb=1)
 set_pivot_to_bottom(n)
-createBranch(0.4, 0.2, n, height, Density)
