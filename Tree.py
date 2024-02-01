@@ -1,85 +1,102 @@
 import maya.cmds as cmds
-import random as r
-import math as m
-import time
+import maya.api.OpenMaya as om
+import random
 
-def set_pivot_to_bottom(obj_name):
-    # Get the bounding box of the object
-    bbox = cmds.exactWorldBoundingBox(obj_name)
-    
-    # Calculate the height of the object
-    height = bbox[4] - bbox[1]
-    
-    # Calculate the new pivot point
-    new_pivot = [0.0, -height/2, 0.0]
-    
-    # Set the pivot point of the object
-    cmds.xform(obj_name, piv=new_pivot, r=True)
-    return new_pivot
+class PointPlacer:
+    def __init__(self):
+        self.points = []
 
-def createBranchNonRecursive(i, dec, branch, high, den):
+    def is_vertex_at_height_percentage(self, mesh, vertex_index, percentage):
+        min_bound, _, _, _, max_bound, _ = cmds.exactWorldBoundingBox(mesh)
+        total_height = max_bound - min_bound
+        target_height = max_bound - (total_height * percentage)
+        vertex_pos = cmds.pointPosition(f"{mesh}.vtx[{vertex_index}]", w=True)
+        return vertex_pos[1] >= target_height
+
+    def generate_points_above(self, base_mesh, density, height):
+        temp_points = cmds.ls(f"{base_mesh}.vtx[*]", fl=1)
+        vertices = [f"{base_mesh}.vtx[{i}]" for i in range(len(temp_points))]
+        vertex_positions = cmds.pointPosition(vertices, w=True)
+        
+        for i, point in enumerate(temp_points):
+            if random.random() <= density and self.is_vertex_at_height_percentage(base_mesh, i, height):
+                self.points.append(vertex_positions[i])
+
+    def generate_points(self, base_mesh, density):
+        temp_points = cmds.ls(f"{base_mesh}.vtx[*]", fl=1)
+        vertices = [f"{base_mesh}.vtx[{i}]" for i in range(len(temp_points))]
+        vertex_positions = cmds.pointPosition(vertices, w=True)
+
+        for i, point in enumerate(temp_points):
+            if random.random() <= density:
+                self.points.append(vertex_positions[i])
+
+    def place_points(self, branch):
+        locators = cmds.spaceLocator(name=f"{branch}_loc#", position=self.points)
+        cmds.parent(locators, branch)
+
+
+def create_branch_non_recursive(i, dec, branch, high, den):
     stack = []
-    Pointy = PointPlacer()
+    pointy = PointPlacer()
     num = 0
 
     while True:
-        if r.random() < i:
+        if random.random() < i:
             if branch == "Trunk":
-                Pointy.generatePointsAbove(branch, den, height)
+                pointy.generate_points_above(branch, den, height)
             else:
-                Pointy.generatePoints(branch, den)
+                pointy.generate_points(branch, den)
 
-            for point in Pointy.points:
-                newName = branch + "_Branch" + str(num)
-                print("Creating branch: " + newName)
-                cmds.instance(branch, n=newName)
-                cmds.parent(newName, branch)
-                cmds.scale(i, i * 2, i)
-                cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1, ro=(str(90 * r.random()) + "deg", str(180 * r.random()) + "deg", str(90 * r.random()) + "deg"))                
-                # Push the branch onto the stack along with its parameters
-                stack.append((i - dec, dec, newName, high, den, num))
+            instance_scale = [i, i * 2, i]
+            rotation_values = [90 * random.random(), 180 * random.random(), 90 * random.random()]
+
+            for point in pointy.points:
+                new_name = f"{branch}_Branch{num}"
+                print(f"Creating branch: {new_name}")
+                new_instance = cmds.instance(branch, n=new_name)[0]
+                cmds.parent(new_instance, branch)
+                cmds.scale(instance_scale[0], instance_scale[1], instance_scale[2], new_instance)
+                cmds.xform(new_instance, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1, ro=rotation_values)
+                stack.append((i - dec, dec, new_name, high, den, num))
                 num += 1
 
         elif branch != "Trunk":
-            Pointy.generatePoints(branch, den)
+            pointy.generate_points(branch, den)
 
-            for point in Pointy.points:
-                newName = branch + "_Leaf" + str(num)
-                print("Creating leaf: " + newName)
-                cmds.instance("Leaf1", n=newName)
-                cmds.parent(newName, branch)
-                cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1, ro=(str(180 * r.random()) + "deg", str(180 * r.random()) + "deg", str(180 * r.random()) + "deg"))
+            for point in pointy.points:
+                new_name = f"{branch}_Leaf{num}"
+                print(f"Creating leaf: {new_name}")
+                new_instance = cmds.instance("Leaf1", n=new_name)[0]
+                cmds.parent(new_instance, branch)
+                cmds.xform(new_instance, translation=(point[0], point[1], point[2]), ws=1, ro=(180 * random.random(), 180 * random.random(), 180 * random.random()))
                 num += 1
 
         if not stack:
             break
 
-        # Pop the parameters from the stack
         i, dec, branch, high, den, num = stack.pop()
-    
-r.seed(1)
+
+
+# Main code
+random.seed(1)
 
 radius = 0.5
 height = 50
-ySub = 10
+y_sub = 10
 n = "Trunk"
-Ta = 0.1
-Sa = 0.5
-Density = 0.1
+ta = 0.1
+sa = 0.5
+density = 0.1
 
-# rnums = []
-# for i in range(100000):
-# 	rnums.append(r.random())
-print("random numbers generated")
-
-
-cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
+cmds.polyCylinder(n=n, sx=1, sy=y_sub, sz=1, radius=radius, height=height)
 pivot = set_pivot_to_bottom(n)
-createBranchNonRecursive(0.4, 0.2, n, height, Density)
+create_branch_non_recursive(0.4, 0.2, n, height, density)
 
-for i in range(10, ySub * 2 * 10, 10):
-	cmds.polySelect(n, el=i)
-	cmds.polyMoveEdge(tx=r.random() * Ta * 2 - Ta, tz=r.random() * Ta * 2 - Ta, sz=r.random() * Sa + 0.8, sx=r.random() * Sa + 0.8)
+for i in range(10, y_sub * 2 * 10, 10):
+    cmds.polySelect(n, el=i)
+    cmds.polyMoveEdge(tx=random.random() * ta * 2 - ta, tz=random.random() * ta * 2 - ta,
+                      sz=random.random() * sa + 0.8, sx=random.random() * sa + 0.8)
 
 cmds.select(cl=1)
 cmds.polySmooth(n, dv=2, kb=1)
