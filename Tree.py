@@ -1,6 +1,7 @@
 import maya.cmds as cmds
 import random as r
 import math as m
+import threading
 
 def set_pivot_to_bottom(obj_name):
     # Get the bounding box of the object
@@ -39,7 +40,8 @@ def createBranch(i, dec, branch, high, den):
 
 			# cmds.select(cl=1)
 			# cmds.polySmooth(n, dv=2, kb=1)
-			createBranch(i - dec, dec, newName, high, den)
+			threat = threading.Thread(target=createBranch(i - dec, dec, newName, high, den))
+			threat.start()
 			num+= 1
 	elif branch != "Trunk":
 		Pointy.generatePoints(branch, 1 - den)
