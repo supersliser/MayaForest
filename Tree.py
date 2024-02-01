@@ -1,78 +1,33 @@
 import maya.cmds as cmds
-import random as r
-import math as m
-import threading
 
-def set_pivot_to_bottom(obj_name):
-    # Get the bounding box of the object
-    bbox = cmds.exactWorldBoundingBox(obj_name)
-    
-    # Calculate the height of the object
-    height = bbox[4] - bbox[1]
-    
-    # Calculate the new pivot point
-    new_pivot = [0.0, -height/2, 0.0]
-    
-    # Set the pivot point of the object
-    cmds.xform(obj_name, piv=new_pivot, r=True)
-    return new_pivot
+def create_branch(parent, branch_length, num_sub_branches, angle):
+    if num_sub_branches == 0:
+        return
 
-def createBranch(i, dec, branch, high, den):
-	Pointy = PointPlacer()
-	# Pointy.placePoints(branch)
-	num = 0
-	if r.random() < i:
-		Pointy.generatePoints(branch, den)
-		for point in Pointy.points:
-			newName = branch + "_Branch" + str(num)
-			print("Creating branch: " + newName)
-			cmds.polyCylinder(n=newName, sx=1, sy=ySub, sz=1, radius=radius - (1 - i), height=high * (1 - i))
-			cmds.parent(newName, branch)
-			pivot = set_pivot_to_bottom(newName)
-			cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1)
-			# # cmds.scale(i, i, i)
-			# # cmds.rotate("45deg", 0, 0, r=1)
-			cmds.xform(newName, ro=(str(90 * r.random()) + "deg", str(180 * r.random()) + "deg", str(90 * r.random()) + "deg"))
+    # Create a new joint for the branch
+    branch_joint = cmds.joint(p=(0, branch_length, 0), rad=0.1)
 
-			# for j in range(10, (ySub * 2 * 10), 10):
-			# 	cmds.polySelect(newName, el=j)
-			# 	cmds.polyMoveEdge(tx=r.random() * Ta * 2 - Ta, tz=r.random() * Ta * 2 - Ta, sz=r.random() * Sa + 0.8, sx=r.random() * Sa + 0.8)
+    # Rotate the joint
+    cmds.rotate(angle, 0, 0, branch_joint, relative=True)
 
-			# cmds.select(cl=1)
-			# cmds.polySmooth(n, dv=2, kb=1)
-			threat = threading.Thread(target=createBranch(i - dec, dec, newName, high, den))
-			threat.start()
-			num+= 1
-	elif branch != "Trunk":
-		Pointy.generatePoints(branch, den)
-		for point in Pointy.points:
-			newName = branch + "_Leaf" + str(num)
-			print("Creating leaf: " + newName)
-			cmds.instance("Leaf1", n=newName)
-			cmds.parent(newName, branch)
-			cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
-			cmds.xform(newName, ro=(str(180 * r.random()) + "deg", str(180 * r.random()) + "deg", str(180 * r.random()) + "deg"))
-			num += 1
-# cmds.file( f=True, new=True )
+    # Parent the joint to the hierarchy
+    cmds.parent(branch_joint, parent)
 
-r.seed(1)
+    # Recursive call for sub-branches
+    create_branch(branch_joint, branch_length * 0.7, num_sub_branches - 1, angle)
+    create_branch(branch_joint, branch_length * 0.7, num_sub_branches - 1, -angle)
 
-radius = 0.5
-height = 50
-ySub = 10
-n = "Trunk"
-Ta = 0.1
-Sa = 0.5
-Density = 0.05
+def create_tree():
+    # Create a base joint for the trunk
+    trunk_joint = cmds.joint(p=(0, 0, 0), rad=0.2)
 
+    # Set up parameters for the tree
+    trunk_length = 5.0
+    num_sub_branches = 3
+    angle = 30.0
 
-cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
+    # Create branches recursively
+    create_branch(trunk_joint, trunk_length, num_sub_branches, angle)
 
-for i in range(10, ySub * 2 * 10, 10):
-	cmds.polySelect(n, el=i)
-	cmds.polyMoveEdge(tx=r.random() * Ta * 2 - Ta, tz=r.random() * Ta * 2 - Ta, sz=r.random() * Sa + 0.8, sx=r.random() * Sa + 0.8)
-
-cmds.select(cl=1)
-cmds.polySmooth(n, dv=2, kb=1)
-set_pivot_to_bottom(n)
-createBranch(0.4, 0.1, n, height, Density)
+# Run the function to create the tree
+create_tree()
