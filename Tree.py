@@ -14,6 +14,7 @@ class PointPlacer:
         return vertex_pos[1] >= target_height
 
     def generate_points_above(self, base_mesh, density, height):
+        self.points = []  # Clear the points list before generating new points
         temp_points = cmds.ls(f"{base_mesh}.vtx[*]", fl=1)
         vertices = [f"{base_mesh}.vtx[{i}]" for i in range(len(temp_points))]
         vertex_positions = cmds.pointPosition(vertices, w=True)
@@ -23,6 +24,7 @@ class PointPlacer:
                 self.points.append(vertex_positions[i])
 
     def generate_points(self, base_mesh, density):
+        self.points = []  # Clear the points list before generating new points
         temp_points = cmds.ls(f"{base_mesh}.vtx[*]", fl=1)
         vertices = [f"{base_mesh}.vtx[{i}]" for i in range(len(temp_points))]
         vertex_positions = cmds.pointPosition(vertices, w=True)
@@ -35,6 +37,15 @@ class PointPlacer:
         locators = cmds.spaceLocator(name=f"{branch}_loc#", position=self.points)
         cmds.parent(locators, branch)
 
+# Rest of your code remains unchanged
+
+
+def set_pivot_to_bottom(obj_name):
+    bbox = cmds.exactWorldBoundingBox(obj_name)
+    height = bbox[4] - bbox[1]
+    new_pivot = [0.0, -height/2, 0.0]
+    cmds.xform(obj_name, piv=new_pivot, r=True)
+    return new_pivot
 
 def create_branch_non_recursive(i, dec, branch, high, den):
     stack = []
@@ -61,6 +72,9 @@ def create_branch_non_recursive(i, dec, branch, high, den):
                 stack.append((i - dec, dec, new_name, high, den, num))
                 num += 1
 
+            # Clear the points list after processing
+            pointy.points = []
+
         elif branch != "Trunk":
             pointy.generate_points(branch, den)
 
@@ -72,10 +86,14 @@ def create_branch_non_recursive(i, dec, branch, high, den):
                 cmds.xform(new_instance, translation=(point[0], point[1], point[2]), ws=1, ro=(180 * random.random(), 180 * random.random(), 180 * random.random()))
                 num += 1
 
+            # Clear the points list after processing
+            pointy.points = []
+
         if not stack:
             break
 
         i, dec, branch, high, den, num = stack.pop()
+
 
 
 # Main code
