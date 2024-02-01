@@ -23,7 +23,7 @@ def createBranchNonRecursive(i, dec, branch, high, den):
     num = 0
 
     while True:
-        if rnums.pop() < i:
+        if r.random() < i:
             if branch == "Trunk":
                 Pointy.generatePointsAbove(branch, den, height)
             else:
@@ -35,9 +35,7 @@ def createBranchNonRecursive(i, dec, branch, high, den):
                 cmds.instance(branch, n=newName)
                 cmds.parent(newName, branch)
                 cmds.scale(i, i * 2, i)
-                cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1)
-                cmds.xform(newName, ro=(str(90 * rnums.pop()) + "deg", str(180 * rnums.pop()) + "deg", str(90 * rnums.pop()) + "deg"))
-                
+                cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1, ro=(str(90 * r.random()) + "deg", str(180 * r.random()) + "deg", str(90 * r.random()) + "deg"))                
                 # Push the branch onto the stack along with its parameters
                 stack.append((i - dec, dec, newName, high, den, num))
                 num += 1
@@ -50,8 +48,7 @@ def createBranchNonRecursive(i, dec, branch, high, den):
                 print("Creating leaf: " + newName)
                 cmds.instance("Leaf1", n=newName)
                 cmds.parent(newName, branch)
-                cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
-                cmds.xform(newName, ro=(str(180 * rnums.pop()) + "deg", str(180 * rnums.pop()) + "deg", str(180 * rnums.pop()) + "deg"))
+                cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1, ro=(str(180 * r.random()) + "deg", str(180 * r.random()) + "deg", str(180 * r.random()) + "deg"))
                 num += 1
 
         if not stack:
@@ -70,19 +67,19 @@ Ta = 0.1
 Sa = 0.5
 Density = 0.1
 
-rnums = []
-for i in range(100000):
-	rnums.append(r.random())
+# rnums = []
+# for i in range(100000):
+# 	rnums.append(r.random())
 print("random numbers generated")
 
 
 cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
 pivot = set_pivot_to_bottom(n)
-createBranch(0.2, 0.1, n, height, Density)
+createBranchNonRecursive(0.4, 0.2, n, height, Density)
 
 for i in range(10, ySub * 2 * 10, 10):
 	cmds.polySelect(n, el=i)
-	cmds.polyMoveEdge(tx=rnums.pop() * Ta * 2 - Ta, tz=rnums.pop() * Ta * 2 - Ta, sz=rnums.pop() * Sa + 0.8, sx=rnums.pop() * Sa + 0.8)
+	cmds.polyMoveEdge(tx=r.random() * Ta * 2 - Ta, tz=r.random() * Ta * 2 - Ta, sz=r.random() * Sa + 0.8, sx=r.random() * Sa + 0.8)
 
 cmds.select(cl=1)
 cmds.polySmooth(n, dv=2, kb=1)
