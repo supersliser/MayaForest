@@ -70,7 +70,7 @@ Ta = 0.1
 Sa = 0.5
 Density = 0.1
 
-
+cmds.undoInfo(openChunk=True)
 cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
 pivot = set_pivot_to_bottom(n)
 createBranch(0.2, 0.1, n, height, Density)
@@ -82,3 +82,4 @@ for i in range(10, ySub * 2 * 10, 10):
 cmds.select(cl=1)
 cmds.polySmooth(n, dv=2, kb=1)
 set_pivot_to_bottom(n)
+cmds.undoInfo(closeChunk=True)
