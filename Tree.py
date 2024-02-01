@@ -37,7 +37,7 @@ def createBranch(i, dec, branch, high, den):
 			createBranch(i - dec, dec, newName, high, den)
 			num+= 1
 	elif branch != "Trunk":
-		Pointy.generatePoints(branch, 0.1 - den)
+		Pointy.generatePointsAbove(branch, 0.5 - den, 0.2)
 		for point in Pointy.points:
 			newName = branch + "_Leaf" + str(num)
 			print("Creating leaf: " + newName)
