@@ -74,4 +74,4 @@ finally:
 	cmds.select(cl=1)
 	cmds.polySmooth(n, dv=2, kb=1)
 	set_pivot_to_bottom(n)
-	createBranch(0.8, 0.2, n, height, Density)
+	createBranch(0.4, 0.1, n, height, Density)
