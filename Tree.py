@@ -54,51 +54,35 @@ def connectBranch(Parent):
 	if children != []:
 		connectBranch(children[0])
 		print(f"Connecting {children}")
-		shrinkwrap_and_smooth(children, 1)
+		create_shrinkwrap(children, Parent)
     	# Smooth the transition between the cylinder and the existing mesh
 	
-def find_closest_vertex(source_mesh, target_vertex_position):
-    print("finding closest vertex")
-    closest_vertex = None
-    min_distance = float('inf')
+def create_shrinkwrap(wrapper_objects, target_object, projection_method="closestPoint", **kwargs):
+    """
+    Creates a shrinkwrap deformer on the specified wrapper objects, targeting the given target object.
 
-    vtx_indices = cmds.polyListComponentConversion(source_mesh + ".vtx[*]", toVertex=True)
-    
-    for vtx_index in vtx_indices:
-        source_vertex_position = cmds.pointPosition(vtx_index, world=True)
-        distance = m.sqrt(sum((a - b) ** 2 for a, b in zip(source_vertex_position, target_vertex_position)))
+    Args:
+        wrapper_objects (list): A list of wrapper objects to apply the shrinkwrap to.
+        target_object (str): The name of the target object to shrinkwrap onto.
+        projection_method (str, optional): The projection method to use. Defaults to "closestPoint".
+        **kwargs: Additional keyword arguments to pass to the shrinkWrap deformer command.
 
-        if distance < min_distance:
-            min_distance = distance
-            closest_vertex = vtx_index
+    Returns:
+        str: The name of the created shrinkwrap deformer.
+    """
 
-    return closest_vertex
+    deformer = cmds.deformer(type="shrinkWrap", n=f"shrinkWrap_{target_object}")
+    cmds.setAttr(f"{deformer}.target", target_object, type="string")
+    cmds.setAttr(f"{deformer}.projectionMethod", projection_method, type="string")
 
-def shrinkwrap_and_smooth(mesh_list, smooth_iterations=1):
-    # Check if there are at least two meshes for shrink-wrapping
-    if len(mesh_list) < 2:
-        print("Error: At least two meshes are required for shrink-wrapping.")
-        return
+    for obj in wrapper_objects:
+        cmds.deformer(obj, e=True, addObject=[deformer])
 
-    # Set the first mesh in the list as the target mesh
-    target_mesh = mesh_list[0]
+    # Set optional parameters
+    for key, value in kwargs.items():
+        cmds.setAttr(f"{deformer}.{key}", value)
 
-    # Iterate through each mesh (excluding the first one) and project its vertices onto the target mesh
-    for mesh_name in mesh_list[1:]:
-        vtx_indices = cmds.polyListComponentConversion(mesh_name + ".vtx[*]", toVertex=True)
-        
-        for vtx_index in vtx_indices:
-            vertex_position = cmds.pointPosition(vtx_index, world=True)
-            closest_vertex_target = find_closest_vertex(target_mesh, vertex_position)
-            
-            if closest_vertex_target:
-                closest_vertex_position = cmds.pointPosition(closest_vertex_target, world=True)
-                cmds.move(closest_vertex_position[0], closest_vertex_position[1], closest_vertex_position[2], vtx_index, absolute=True)
-
-    # Smooth the resulting mesh
-    smoothed_mesh = cmds.polySmooth(target_mesh, method=0, dv=smooth_iterations)[0]
-
-    return smoothed_mesh
+    return deformer
 
 
 
