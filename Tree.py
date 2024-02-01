@@ -75,4 +75,4 @@ for i in range(10, ySub * 2 * 10, 10):
 cmds.select(cl=1)
 cmds.polySmooth(n, dv=2, kb=1)
 set_pivot_to_bottom(n)
-createBranch(0.4, 0.05, n, height, Density)
+createBranch(0.4, 0.1, n, height, Density)
