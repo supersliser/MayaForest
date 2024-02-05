@@ -32,7 +32,7 @@ def createBranch(i, dec, branch, den):
 			cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1)
 			# # cmds.scale(i, i, i)
 			# # cmds.rotate("45deg", 0, 0, r=1)
-			cmds.xform(newName, ro=(str(180 * r.random()) + "deg", str(360 * r.random()) + "deg", str(180 * r.random()) + "deg"))
+			cmds.xform(newName, ws=0, ro=(str(90 * r.random()) + "deg", str(180 * r.random()) + "deg", str(90 * r.random()) + "deg"))
 			if deform:
 				for i in range(10, ySub * 2 * 10, 10):
 					cmds.polySelect(newName, el=i)
@@ -57,7 +57,7 @@ ySub = 10
 n = "Trunk"
 Ta = 0.1
 Sa = 0.5
-Density = 0.2
+Density = 0.3
 leaves = True
 deform = False
 
@@ -66,7 +66,7 @@ try:
 except:
 	pass
 cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
-createBranch(0.5, 0.2, n, Density)
+createBranch(0.8, 0.2, n, Density)
 
 for i in range(10, ySub * 2 * 10, 10):
 	cmds.polySelect(n, el=i)
