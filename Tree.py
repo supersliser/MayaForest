@@ -32,9 +32,12 @@ def createBranch(i, dec, branch, den):
 			cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1)
 			# # cmds.scale(i, i, i)
 			# # cmds.rotate("45deg", 0, 0, r=1)
-			cmds.xform(newName, ro=(str(180 * r.random()) + "deg", str(180 * r.random()) + "deg", str(180 * r.random()) + "deg"))
-
-
+			cmds.xform(newName, ro=(str(180 * r.random()) + "deg", str(360 * r.random()) + "deg", str(180 * r.random()) + "deg"))
+			if deform:
+				for i in range(10, ySub * 2 * 10, 10):
+					cmds.polySelect(newName, el=i)
+					cmds.polyMoveEdge(tx=r.random() * Ta * 2 - Ta, tz=r.random() * Ta * 2 - Ta, sz=r.random() * Sa + 0.8, sx=r.random() * Sa + 0.8)
+					cmds.select(cl=1)
 			num+= 1
 	elif branch != "Trunk" and leaves:
 		Pointy.generatePointsAbove(branch, 0.5 - den, 0.2)
@@ -56,8 +59,12 @@ Ta = 0.1
 Sa = 0.5
 Density = 0.2
 leaves = True
+deform = False
 
-
+try:
+    cmds.delete(n)
+except:
+	pass
 cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
 createBranch(0.5, 0.2, n, Density)
 
@@ -65,6 +72,6 @@ for i in range(10, ySub * 2 * 10, 10):
 	cmds.polySelect(n, el=i)
 	cmds.polyMoveEdge(tx=r.random() * Ta * 2 - Ta, tz=r.random() * Ta * 2 - Ta, sz=r.random() * Sa + 0.8, sx=r.random() * Sa + 0.8)
 
-cmds.select(cl=1)
-cmds.polySmooth(n, dv=2, kb=1)
+cmds.select(n)
+cmds.polySmooth(dv=2, kb=1)
 set_pivot_to_bottom(n)
