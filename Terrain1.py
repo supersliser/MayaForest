@@ -12,8 +12,8 @@ cmds.file( f=True, new=True )
 #The name of the object in the outliner
 name = "Terrain"
 #The width and height of the plane
-xSize = 15
-ySize = 15
+xSize = 150
+ySize = 150
 #The subdivision of the plane
 xSub = 5
 ySub = 5
