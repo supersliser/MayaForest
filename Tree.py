@@ -49,6 +49,7 @@ def createBranch(i, dec, branch, den):
 			# # cmds.scale(i, i, i)
 			# # cmds.rotate("45deg", 0, 0, r=1)
 			cmds.xform(newName, ws=1, ro=(str(90 * r.random()) + "deg", str(180 * r.random()) + "deg", str(90 * r.random()) + "deg"))
+			createAnim(newName, cmds.xform(newName, q=1, ro=1), (1 - i) * animAmount)
 			num+= 1
 	elif branch != "Trunk" and leaves:
 		Pointy.generatePointsAbove(branch, (1 - den)/2, 0.2)
@@ -59,9 +60,27 @@ def createBranch(i, dec, branch, den):
 			cmds.parent(newName, branch)
 			cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
 			cmds.xform(newName, ro=(str(360 * r.random()) + "deg", str(360 * r.random()) + "deg", str(360 * r.random()) + "deg"))
+			createAnim(newName, cmds.xform(newName, q=1, ro=1), (1 - i) * animAmount)
 			num += 1
 
-
+def createAnim(itemName, itemRotation, rotationFactor):
+	cmds.setKeyframe(itemName, at="rotateX", time=0, v=itemRotation[0])
+	cmds.setKeyframe(itemName, at="rotateY", time=0, v=itemRotation[1])
+	cmds.setKeyframe(itemName, at="rotateZ", time=0, v=itemRotation[2])
+	cmds.setKeyframe(itemName, at="rotateX", time=25, v=itemRotation[0] + ((r.random() * rotationFactor) - rotationFactor/2))
+	cmds.setKeyframe(itemName, at="rotateY", time=25, v=itemRotation[1] + ((r.random() * rotationFactor) - rotationFactor/2))
+	cmds.setKeyframe(itemName, at="rotateZ", time=25, v=itemRotation[2] + ((r.random() * rotationFactor) - rotationFactor/2))
+	cmds.setKeyframe(itemName, at="rotateX", time=50, v=itemRotation[0])
+	cmds.setKeyframe(itemName, at="rotateY", time=50, v=itemRotation[1])
+	cmds.setKeyframe(itemName, at="rotateZ", time=50, v=itemRotation[2])
+	cmds.setKeyframe(itemName, at="rotateX", time=75, v=itemRotation[0] + ((r.random() * rotationFactor) - rotationFactor/2))
+	cmds.setKeyframe(itemName, at="rotateY", time=75, v=itemRotation[1] + ((r.random() * rotationFactor) - rotationFactor/2))
+	cmds.setKeyframe(itemName, at="rotateZ", time=75, v=itemRotation[2] + ((r.random() * rotationFactor) - rotationFactor/2))
+	cmds.setKeyframe(itemName, at="rotateX", time=100, v=itemRotation[0])
+	cmds.setKeyframe(itemName, at="rotateY", time=100, v=itemRotation[1])
+	cmds.setKeyframe(itemName, at="rotateZ", time=100, v=itemRotation[2])
+	
+	
 
 r.seed(1)
 
@@ -74,6 +93,7 @@ Sa = 0.5
 Density = 0.2
 leaves = True
 deform = True
+animAmount = 10
 
 try:
     cmds.delete(n)
@@ -89,5 +109,7 @@ distortBranch("Trunk")
 cmds.select(n)
 cmds.polySmooth(dv=2, kb=1)
 set_pivot_to_bottom(n)
+
+cmds.playbackOptions(minTime="0sec", maxTime="100sec", l="continuous")
 
 cmds.refresh(f=1)
