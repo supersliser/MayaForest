@@ -13,7 +13,7 @@ class PointPlacer:
         min_bound = cmds.exactWorldBoundingBox(meshName)[1]
         max_bound = cmds.exactWorldBoundingBox(meshName)[4]
         # Calculate total height and target height
-        top_y = max_bound
+        top_y = max_bound - 0.5
         bottom_y = min_bound
         total_height = top_y - bottom_y
         target_height = top_y - (total_height * percentage)

@@ -10,7 +10,7 @@ def set_pivot_to_bottom(obj_name):
     height = bbox[4] - bbox[1]
     
     # Calculate the new pivot point
-    new_pivot = [0.0, (-height/2) + 1, 0.0]
+    new_pivot = [0.0, (-height/2) + (height / 50), 0.0]
     
     # Set the pivot point of the object
     cmds.xform(obj_name, piv=new_pivot, r=True)
@@ -40,7 +40,7 @@ def createBranch(i, dec, branch, den):
 	# Pointy.placePoints(branch)
 	num = 0
 	if r.random() < i:
-		Pointy.generatePointsAbove(branch, den, 0.2)
+		Pointy.generatePointsAbove(branch, den, 0.5)
 		for point in Pointy.points:
 			newName = branch + "_Branch" + str(num)
 			print("Creating branch: " + newName)
@@ -54,11 +54,11 @@ def createBranch(i, dec, branch, den):
 			cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1)
 			# # cmds.scale(i, i, i)
 			# # cmds.rotate("45deg", 0, 0, r=1)
-			cmds.xform(newName, ws=1, ro=(str(90 * r.random()) + "deg", str(180 * r.random()) + "deg", str(90 * r.random()) + "deg"))
-			createAnim(newName, cmds.xform(newName, q=1, ro=1), (1 - i) * animAmount)
+			cmds.xform(newName, ws=1, ro=(str(90 * r.random()) + "deg", str(360 * r.random()) + "deg", str(90 * r.random()) + "deg"))
+			createAnim(newName, cmds.xform(newName, q=1, ro=1), (1 - i) * animAmount, animationStart, animationStop, animationStep)
 			num+= 1
 	elif branch != "Trunk" and leaves:
-		Pointy.generatePointsAbove(branch, (1 - den)/2, 0.2)
+		Pointy.generatePointsAbove(branch, (1 - (den * 10)) / 2, 0.5)
 		for point in Pointy.points:
 			newName = branch + "_Leaf" + str(num)
 			print("Creating leaf: " + newName)
@@ -66,29 +66,21 @@ def createBranch(i, dec, branch, den):
 			cmds.parent(newName, branch)
 			cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
 			cmds.xform(newName, ro=(str(360 * r.random()) + "deg", str(360 * r.random()) + "deg", str(360 * r.random()) + "deg"))
-			createAnim(newName, cmds.xform(newName, q=1, ro=1), (1 - i) * animAmount)
+			createAnim(newName, cmds.xform(newName, q=1, ro=1), animAmount, animationStart, animationStop, animationStep)
 			num += 1
 
-def createAnim(itemName, itemRotation, rotationFactor):
-	cmds.setKeyframe(itemName, at="rotateX", time=0, v=itemRotation[0])
-	cmds.setKeyframe(itemName, at="rotateY", time=0, v=itemRotation[1])
-	cmds.setKeyframe(itemName, at="rotateZ", time=0, v=itemRotation[2])
-	cmds.setKeyframe(itemName, at="rotateX", time=25, v=itemRotation[0] + ((r.random() * rotationFactor) - rotationFactor/2))
-	cmds.setKeyframe(itemName, at="rotateY", time=25, v=itemRotation[1] + ((r.random() * rotationFactor) - rotationFactor/2))
-	cmds.setKeyframe(itemName, at="rotateZ", time=25, v=itemRotation[2] + ((r.random() * rotationFactor) - rotationFactor/2))
-	cmds.setKeyframe(itemName, at="rotateX", time=50, v=itemRotation[0])
-	cmds.setKeyframe(itemName, at="rotateY", time=50, v=itemRotation[1])
-	cmds.setKeyframe(itemName, at="rotateZ", time=50, v=itemRotation[2])
-	cmds.setKeyframe(itemName, at="rotateX", time=75, v=itemRotation[0] + ((r.random() * rotationFactor) - rotationFactor/2))
-	cmds.setKeyframe(itemName, at="rotateY", time=75, v=itemRotation[1] + ((r.random() * rotationFactor) - rotationFactor/2))
-	cmds.setKeyframe(itemName, at="rotateZ", time=75, v=itemRotation[2] + ((r.random() * rotationFactor) - rotationFactor/2))
-	cmds.setKeyframe(itemName, at="rotateX", time=100, v=itemRotation[0])
-	cmds.setKeyframe(itemName, at="rotateY", time=100, v=itemRotation[1])
-	cmds.setKeyframe(itemName, at="rotateZ", time=100, v=itemRotation[2])
+def createAnim(itemName, itemRotation, rotationFactor, start, stop, step):
+	for i in range(start, stop, step * 2):
+		cmds.setKeyframe(itemName, at="rotateX", time=i, v=itemRotation[0])
+		cmds.setKeyframe(itemName, at="rotateY", time=i, v=itemRotation[1])
+		cmds.setKeyframe(itemName, at="rotateZ", time=i, v=itemRotation[2])
+		cmds.setKeyframe(itemName, at="rotateX", time=i + step, v=itemRotation[0] + ((r.random() * rotationFactor) - rotationFactor/2))
+		cmds.setKeyframe(itemName, at="rotateY", time=i + step, v=itemRotation[1] + ((r.random() * rotationFactor) - rotationFactor/2))
+		cmds.setKeyframe(itemName, at="rotateZ", time=i + step, v=itemRotation[2] + ((r.random() * rotationFactor) - rotationFactor/2))
 	
 	
 
-r.seed(1)
+r.seed(2)
 
 radius = 1
 height = 40
@@ -96,11 +88,14 @@ ySub = 10
 n = "Trunk"
 Ta = 0.1
 Sa = 0.5
-Density = 0.2
+Density = 0.5
 leaves = True
 deform = True
-animAmount = 5
+animAmount = 10
 widthFactor = 2
+animationStart = 0
+animationStop = 200
+animationStep = 50
 
 try:
     cmds.delete(n)
@@ -109,9 +104,9 @@ except:
 cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
 
 
-createBranch(0.8, 0.2, n, Density)
+createBranch(1, 0.2, n, Density / 10)
 
-editRadius(n, 5, 5)
+editRadius(n, 1, 2)
 
 
 distortBranch(n)
@@ -120,6 +115,6 @@ cmds.select(n)
 cmds.polySmooth(dv=2, kb=1)
 set_pivot_to_bottom(n)
 
-cmds.playbackOptions(minTime="0sec", maxTime="100frames", l="continuous")
+cmds.playbackOptions(minTime=animationStart, maxTime=animationStop, l="continuous")
 
 cmds.refresh(f=1)
