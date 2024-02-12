@@ -70,7 +70,7 @@ def createAnim(itemName, itemRotation, rotationFactor, start, stop, step):
 r.seed(5)
 
 radius = 2
-height = 30
+height = 20
 ySub = 10
 n = "Trunk"
 Ta = 0.1
