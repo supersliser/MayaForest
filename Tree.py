@@ -5,7 +5,7 @@ import math as m
 def generateCurve(name: str, height, start: tuple, i: int = 1):
     points:list = [start]
     for j in range(m.floor(height * i) + 1):
-        points.append((start[0] + (r.uniform(0, i/8)) * j, start[1] + j * i * 2, start[2] + (r.uniform(0, i/8)) * j,))
+        points.append((start[0] + r.uniform(0, i/8) * j, start[1] + j * i * r.uniform(0, 4), start[2] + r.uniform(0, i/8) * j,))
     cmds.curve(n=name, p=points, bez=1)
     
 def generatePoints(name, density: float, height, i):
