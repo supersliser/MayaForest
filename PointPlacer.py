@@ -18,24 +18,21 @@ class PointPlacer:
         total_height = top_y - bottom_y
         target_height = top_y - (total_height * percentage)
         # Get vertex position
-        vertex_pos = cmds.pointPosition(
-            meshName + ".vtx[" + str(vertexIndex) + "]", w=True
-        )
+        vertex_pos = cmds.pointPosition(f"{meshName}.vtx[{str(vertexIndex)}]", w=True)
         vertex_y = vertex_pos[1]
         # Compare vertex and target heights
         return vertex_y >= target_height
 
     def generatePointsAbove(self, baseMesh, density, height):
         self.points = []
-        tempPoints = cmds.ls(baseMesh + ".vtx[*]", fl=1)
+        tempPoints = cmds.ls(f"{baseMesh}.vtx[*]", fl=1)
         for p in tempPoints:
-            if r.random() <= density:
-                if self.is_vertex_at_height_percentage(meshName=baseMesh, vertexIndex=tempPoints.index(p), percentage=height):
-                    self.points.append(cmds.pointPosition(p, w=1))
+            if r.random() <= density and self.is_vertex_at_height_percentage(meshName=baseMesh, vertexIndex=tempPoints.index(p), percentage=height):
+                self.points.append(cmds.pointPosition(p, w=1))
 
     def generatePoints(self, baseMesh, density):
         self.points = []
-        tempPoints = cmds.ls(baseMesh + ".vtx[*]", fl=1)
+        tempPoints = cmds.ls(f"{baseMesh}.vtx[*]", fl=1)
         for p in tempPoints:
             if r.random() <= density:
                 self.points.append(cmds.pointPosition(p, w=1))

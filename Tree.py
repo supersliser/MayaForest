@@ -36,38 +36,53 @@ def editRadius(name, factor, i):
 		cmds.select(cl=1)
 
 def createBranch(i, dec, branch, den):
-	Pointy = PointPlacer()
-	# Pointy.placePoints(branch)
-	num = 0
-	if r.random() < i:
-		Pointy.generatePointsAbove(branch, den, 0.5)
-		for point in Pointy.points:
-			newName = branch + "_Branch" + str(num)
-			print("Creating branch: " + newName)
-			cmds.polyCylinder(n=newName, sx=1, sy=ySub, sz=1, radius=radius, height=height * i)
-			cmds.parent(newName, branch)
-			if deform:
-				distortBranch(newName)
-				editRadius(newName, widthFactor, i)
-			pivot = set_pivot_to_bottom(newName)
-			createBranch(i - dec, dec, newName, den)
-			cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1)
-			# # cmds.scale(i, i, i)
-			# # cmds.rotate("45deg", 0, 0, r=1)
-			cmds.xform(newName, ws=1, ro=(str(90 * r.random()) + "deg", str(360 * r.random()) + "deg", str(90 * r.random()) + "deg"))
-			createAnim(newName, cmds.xform(newName, q=1, ro=1), (1 - i) * animAmount, animationStart, animationStop, animationStep)
-			num+= 1
-	elif branch != "Trunk" and leaves:
-		Pointy.generatePointsAbove(branch, (1 - (den * 10)) / 2, 0.5)
-		for point in Pointy.points:
-			newName = branch + "_Leaf" + str(num)
-			print("Creating leaf: " + newName)
-			cmds.duplicate("Leaf1", n=newName)
-			cmds.parent(newName, branch)
-			cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
-			cmds.xform(newName, ro=(str(360 * r.random()) + "deg", str(360 * r.random()) + "deg", str(360 * r.random()) + "deg"))
-			createAnim(newName, cmds.xform(newName, q=1, ro=1), animAmount, animationStart, animationStop, animationStep)
-			num += 1
+    Pointy = PointPlacer()
+    # Pointy.placePoints(branch)
+    num = 0
+    if r.random() < i:
+        Pointy.generatePointsAbove(branch, den, 0.5)
+        for point in Pointy.points:
+            newName = f"{branch}_Branch{str(num)}"
+            print(f"Creating branch: {newName}")
+            cmds.polyCylinder(n=newName, sx=1, sy=ySub, sz=1, radius=radius, height=height * i)
+            cmds.parent(newName, branch)
+            if deform:
+                distortBranch(newName)
+                editRadius(newName, widthFactor, i)
+            pivot = set_pivot_to_bottom(newName)
+            createBranch(i - dec, dec, newName, den)
+            cmds.xform(newName, translation=(point[0] - pivot[0], point[1] - pivot[1], point[2] - pivot[2]), ws=1)
+            # # cmds.scale(i, i, i)
+            # # cmds.rotate("45deg", 0, 0, r=1)
+            cmds.xform(
+                newName,
+                ws=1,
+                ro=(
+                    f"{str(90 * r.random())}deg",
+                    f"{str(360 * r.random())}deg",
+                    f"{str(90 * r.random())}deg",
+                ),
+            )
+            createAnim(newName, cmds.xform(newName, q=1, ro=1), (1 - i) * animAmount, animationStart, animationStop, animationStep)
+            num+= 1
+    elif branch != "Trunk" and leaves:
+        Pointy.generatePointsAbove(branch, (1 - (den * 10)) / 2, 0.5)
+        for point in Pointy.points:
+            newName = f"{branch}_Leaf{str(num)}"
+            print(f"Creating leaf: {newName}")
+            cmds.duplicate("Leaf1", n=newName)
+            cmds.parent(newName, branch)
+            cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
+            cmds.xform(
+                newName,
+                ro=(
+                    f"{str(360 * r.random())}deg",
+                    f"{str(360 * r.random())}deg",
+                    f"{str(360 * r.random())}deg",
+                ),
+            )
+            createAnim(newName, cmds.xform(newName, q=1, ro=1), animAmount, animationStart, animationStop, animationStep)
+            num += 1
 
 def createAnim(itemName, itemRotation, rotationFactor, start, stop, step):
 	for i in range(start, stop, step * 2):
@@ -104,7 +119,7 @@ except:
 cmds.polyCylinder(n=n, sx=1, sy=ySub, sz=1, radius=radius, height=height)
 
 
-createBranch(1, 0.2, n, Density / 10)
+createBranch(0.8, 0.2, n, Density / 10)
 
 editRadius(n, 1, 2)
 
