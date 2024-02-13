@@ -5,7 +5,7 @@ import math as m
 def generateCurve(name: str, height, start: tuple, i: int = 1):
     points:list = [start]
     for j in range(m.floor(height * i) + 1):
-        points.append((start[0] + r.uniform(0, i/8) * j, start[1] + j * i * r.uniform(0, 4), start[2] + r.uniform(0, i/8) * j,))
+        points.append((start[0] + (r.uniform(0, i/8)) * j, start[1] + j * i * 2, start[2] + (r.uniform(0, i/8)) * j,))
     cmds.curve(n=name, p=points, bez=1)
     
 def generatePoints(name, density: float, height, i):
@@ -33,7 +33,7 @@ def createBranch(i, dec, branch, den):
             print(f"Creating branch: {newName}")
             generateCurve(newName, height, point, i)
             cmds.parent(newName, branch)
-            rotation = (f"{str(r.uniform(0, 90))}deg",f"{str(r.uniform(0, 360))}deg",f"{str(r.uniform(0, 90))}deg")
+            rotation = (f"{str(r.uniform(0, 90))}deg",f"{str(r.uniform(0, 180) * num)}deg",f"{str(r.uniform(0, 90))}deg")
             cmds.xform(newName,ws=1,rp=point, ro=rotation)
             createAnim(newName, cmds.xform(newName, q=1, ro=1), (1 - i) * animAmount, animationStart, animationStop, animationStep)
             sweepCurve(newName, point, radius * i)
@@ -69,23 +69,19 @@ def createAnim(itemName, itemRotation, rotationFactor, start, stop, step):
 
 r.seed(5)
 
-radius = 2
+radius = 1
 height = 20
-ySub = 10
 n = "Trunk"
-Ta = 0.1
-Sa = 0.5
 Density = 0.3
 leaves = True
 deform = False
 animAmount = 10
-widthFactor = 2
 animationStart = 0
 animationStop = 200
 animationStep = 25
 genHeight = 1 - 0.5
 branchDivStart = 0.8
-branchDec = 4
+branchDec = 3
 
 try:
     cmds.delete(n)
