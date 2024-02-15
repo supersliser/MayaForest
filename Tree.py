@@ -10,7 +10,6 @@ class Tree:
     n = "Trunk"
     Density = 0.2
     leaves = True
-    deform = False
     animAmount = 10
     animationStart = 0
     animationStop = 500
@@ -65,16 +64,16 @@ class Tree:
 
     def createBranch(self, i, dec, branch, den):
         num = 0
-        points = self.generatePoints(branch, den, self.genHeight, i + dec)
-        for point in points:
-            if r.random() < i:
+        if r.random() < i:
+            points = self.generatePoints(branch, den, self.genHeight, i + dec)
+            for point in points:
                 newName = f"{branch}_Branch{str(num)}"
                 print(f"Creating branch: {newName}")
                 self.generateCurve(newName, self.height, point, i)
                 cmds.parent(newName, branch)
                 self.createBranch(i - dec, dec, newName, den)
-                rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(45, 90) * num)}deg",f"{str(r.uniform(20, 60))}deg")
-                cmds.xform(newName,ws=1,rp=point, ro=rotation)
+                rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(60, 120) * num)}deg",0)
+                cmds.xform(newName,os=1,rp=point, ro=rotation)
                 self.createAnim(
                     newName,
                     cmds.xform(newName, q=1, ro=1),
@@ -85,7 +84,9 @@ class Tree:
                 )
                 self.sweepCurve(newName, point, self.radius * i, i)
                 num+= 1
-            elif branch != "Trunk" and self.leaves:
+        elif branch != "Trunk" and self.leaves:
+            points = self.generatePoints(branch, den, self.genHeight, 1 - i + dec)
+            for point in points:
                 newName = f"{branch}_Leaf{str(num)}"
                 print(f"Creating leaf: {newName}")
                 if self.fast:
