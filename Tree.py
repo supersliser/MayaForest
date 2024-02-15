@@ -4,22 +4,36 @@ import random as r
 import math as m
 
 class Tree:
+    radius
+    height
+    leaves
+    animAmount 
+    animStart
+    animStop
+    animStep
+    genHeight
+    fast
     
-    radius = 1
-    height = 20
-    n = "Trunk"
-    Density = 0.3
-    leaves = True
-    deform = False
-    animAmount = 10
-    animationStart = 0
-    animationStop = 500
-    animationStep = 50
-    genHeight = 1 - 0.6
-    branchDivStart = 0.75
-    branchDec = 4
-    fast = True
-    
+    def generateTree(name, density, branchStart, branchRecLevel, seed):
+    r.seed(seed)
+    with contextlib.suppress(Exception):
+        cmds.delete(name)
+    self.generateCurve(name, self.height, (0, 0, 0), branchStart)
+    self.sweepCurve(name, (0,0,0), self.radius * 2, branchStart)
+    self.createBranch(branchStart, branchStart / branchRecLevel, name, density / 2)
+    cmds.playbackOptions(minTime=animStart, maxTime=animStop, l="continuous")
+    cmds.refresh(f=1)
+        
+    def __init__(self, radius, height, leaves, animAmount, animStart, animEnd, animStep, genHeight, fast):
+        self.radius = radius
+        self.height = height
+        self.leaves = leaves
+        self.animAmount = animAmount
+        self.animStart = animStart
+        self.animStop = animEnd
+        self.animStep = animStep
+        self.genHeight = genHeight
+        self.fast = fast        
     def generateCurve(self, name, height, start: tuple, i: int = 1):
         points:list = [start]
         points.extend(
@@ -71,17 +85,10 @@ class Tree:
                 self.createBranch(i - dec, dec, newName, den)
                 rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(60, 120) * num)}deg",f"{str(r.uniform(20, 60))}deg")
                 cmds.xform(newName,ws=1,rp=point, ro=rotation)
-                self.createAnim(
-                    newName,
-                    cmds.xform(newName, q=1, ro=1),
-                    (1 - i) * self.animAmount,
-                    self.animationStart,
-                    self.animationStop,
-                    self.animationStep,
-                )
+                self.createAnim(newName,cmds.xform(newName, q=1, ro=1))
                 self.sweepCurve(newName, point, self.radius * i, i)
                 num+= 1
-            elif branch != "Trunk" and self.leaves:
+            elif branch != self.n and self.leaves:
                 newName = f"{branch}_Leaf{str(num)}"
                 print(f"Creating leaf: {newName}")
                 if self.fast:
@@ -98,11 +105,11 @@ class Tree:
                         f"{str(r.uniform(0, 360))}deg",
                     ),
                 )
-                self.createAnim(newName, cmds.xform(newName, q=1, ro=1), self.animAmount, self.animationStart, self.animationStop, self.animationStep)
+                self.createAnim(newName, cmds.xform(newName, q=1, ro=1))
                 num += 1
 
-    def createAnim(self, name, itemRotation, rotationFactor, start, stop, step):
-        for i in range(start, stop, step * 2):
+    def createAnim(self, name, itemRotation):
+        for i in range(animStart, animStop, animStep * 2):
             cmds.setKeyframe(name, at="rotateX", time=i, v=itemRotation[0])
             cmds.setKeyframe(name, at="rotateY", time=i, v=itemRotation[1])
             cmds.setKeyframe(name, at="rotateZ", time=i, v=itemRotation[2])
@@ -111,37 +118,19 @@ class Tree:
                 at="rotateX",
                 time=i + step,
                 v=itemRotation[0]
-                + (r.uniform(rotationFactor / 2, rotationFactor)),
+                + (r.uniform(animAmount / 2, animAmount)),
             )
             cmds.setKeyframe(
                 name,
                 at="rotateY",
                 time=i + step,
                 v=itemRotation[1]
-                + (r.uniform(rotationFactor / 2, rotationFactor)),
+                + (r.uniform(animAmount / 2, animAmount)),
             )
             cmds.setKeyframe(
                 name,
                 at="rotateZ",
                 time=i + step,
                 v=itemRotation[2]
-                + (r.uniform(rotationFactor / 2, rotationFactor)),
+                + (r.uniform(animAmount / 2, animAmount)),
             )
-
-    def generateTree(self):
-        r.seed(5)
-
-        with contextlib.suppress(Exception):
-            cmds.delete(self.n)
-        self.generateCurve(self.n, self.height, (0, 0, 0), self.branchDivStart)
-
-        self.sweepCurve(self.n, (0,0,0), self.radius * 2, self.branchDivStart)
-
-        self.createBranch(self.branchDivStart, self.branchDivStart / self.branchDec, self.n, self.Density / 2)
-
-        cmds.playbackOptions(minTime=self.animationStart, maxTime=self.animationStop, l="continuous")
-
-        cmds.refresh(f=1)
-        
-temp = Tree()
-temp.generateTree()
