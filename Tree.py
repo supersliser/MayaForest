@@ -8,16 +8,16 @@ class Tree:
     radius = 1
     height = 20
     n = "Trunk"
-    Density = 0.2
+    Density = 0.3
     leaves = True
     deform = False
     animAmount = 10
     animationStart = 0
     animationStop = 500
-    animationStep = 100
+    animationStep = 50
     genHeight = 1 - 0.6
-    branchDivStart = 0.8
-    branchDec = 3
+    branchDivStart = 0.75
+    branchDec = 4
     fast = True
     
     def generateCurve(self, name, height, start: tuple, i: int = 1):
@@ -35,11 +35,7 @@ class Tree:
     def generatePoints(self, n, density: float, height, i):
         return [
             cmds.pointOnCurve(n, p=1, top=1, pr=r.uniform(height, 1))
-            for _ in range(
-                r.randint(
-                    m.floor(density * 100 * 0.5), m.floor(density * 100 * 1.5)
-                )
-            )
+            for _ in range(m.floor(density * 100))
         ]
 
     def sweepCurve(self, name, point, radius, i):
@@ -73,7 +69,7 @@ class Tree:
                 self.generateCurve(newName, self.height, point, i)
                 cmds.parent(newName, branch)
                 self.createBranch(i - dec, dec, newName, den)
-                rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(45, 90) * num)}deg",f"{str(r.uniform(20, 60))}deg")
+                rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(60, 120) * num)}deg",f"{str(r.uniform(20, 60))}deg")
                 cmds.xform(newName,ws=1,rp=point, ro=rotation)
                 self.createAnim(
                     newName,
@@ -137,9 +133,9 @@ class Tree:
 
         with contextlib.suppress(Exception):
             cmds.delete(self.n)
-        self.generateCurve(self.n, self.height, (0, 0, 0), 1)
+        self.generateCurve(self.n, self.height, (0, 0, 0), self.branchDivStart)
 
-        self.sweepCurve(self.n, (0,0,0), self.radius * 2, 1)
+        self.sweepCurve(self.n, (0,0,0), self.radius * 2, self.branchDivStart)
 
         self.createBranch(self.branchDivStart, self.branchDivStart / self.branchDec, self.n, self.Density / 2)
 
