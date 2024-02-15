@@ -1,58 +1,58 @@
 import maya.cmds as cmds
 
 class TextInput:
-    inpControl
-    default
+    inpControl = 0
+    default = ""
     def __init__(self, name, default, nullable=False):
         if not nullable:
-            self.inpControl = cmds.textFieldGrp(label=name, ec=checkEmpty)
+            self.inpControl = cmds.textFieldGrp(label=name, ec=self.checkEmpty)
             self.default = default
         else:
             self.inpControl = cmds.textFieldGrp(label=name)
     def checkEmpty(self):
-        if getValue() == "":
+        if self.getValue() == "":
             cmds.textFieldGrp(self.inpControl, e=1, v=self.default)
     def getValue(self):
         return cmds.textFieldGrp(self.inpControl, q=1, v=1)
     
-    class IntInput:
-    inpControl
+class IntInput:
+    inpControl = 0
     def __init__(self, name, minValue, maxValue, defaultValue = 0):
         self.inpControl = cmds.intSliderGrp(l=name, min=minValue, max=maxValue, v=defaultValue)
     def getValue(self):
         return cmds.intSliderGrp(self.inpControl, q=1, v=1)
     
-    class FloatInput:
-    inpControl
+class FloatInput:
+    inpControl = 0
     def __init__(self, name, minValue, maxValue, defaultValue = 0):
         self.inpControl = cmds.floatSliderGrp(l=name, min=minValue, max=maxValue, v=defaultValue)
     def getValue(self):
         return cmds.floatSliderGrp(self.inpControl, q=1, v=1)
     
 class BoolInput:
-    inpControl
+    inpControl = 0
     def __init__(self, name, defaultState):
         self.inpControl = cmds.checkBox(l=name, v=defaultState)
     def getValue(self):
         return cmds.checkBox(self.inpControl, q=1, v=1)
 class UI:
-WinControl
-NameInput
-RadiusInput
-HeightInput
-LeavesPresentInput
-GenerateLeavesFastInput
-BranchChangeStartInput
-BranchRecursionAmountInput
-BranchAndLeafDensityInput
-PlacementHeightInput
-AnimationStartInput
-AnimationStopInput
-AnimationStepInput
-AnimationVarianceInput
-RSeedInput
-GenerateButton
-CancelButton
+    WinControl = 0
+    NameInput = 0
+    RadiusInput = 0
+    HeightInput = 0
+    LeavesPresentInput = 0
+    GenerateLeavesFastInput = 0
+    BranchChangeStartInput = 0
+    BranchRecursionAmountInput = 0
+    BranchAndLeafDensityInput = 0
+    PlacementHeightInput = 0
+    AnimationStartInput = 0
+    AnimationStopInput = 0
+    AnimationStepInput = 0
+    AnimationVarianceInput = 0
+    RSeedInput = 0
+    GenerateButton = 0
+    CancelButton = 0
 
     def createTreeUI(self):    
         self.WinControl = cmds.window(t="Tree Generator")
@@ -71,11 +71,11 @@ CancelButton
         self.AnimationStartInput = IntInput("Animation Start frame", 0, 999999, 0)
         self.AnimationStopInput = IntInput("Animation Stop frame", 0, 999999, 500)
         self.AnimationStepInput = IntInput("Animation Step count", 0, 999999, 50)
-        self.AnimationVarianceInput = intInput("Animation magnitude", 0, 90, 10)
+        self.AnimationVarianceInput = IntInput("Animation magnitude", 0, 90, 10)
 
         self.RSeedInput = IntInput("Randomness seed", 1, 999999, 1)
 
-        self.GenerateButton = Button(l="Generate Tree", )
+        self.GenerateButton = cmds.button(l="Generate Tree", )
         cmds.showWindow(winControl)
         
         
