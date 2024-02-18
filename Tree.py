@@ -8,7 +8,7 @@ class TextInput:
     default = ""
     def __init__(self, name, default, nullable=False):
         if not nullable:
-            self.inpControl = cmds.textFieldGrp(label=name, tcc=self.checkEmpty)
+            self.inpControl = cmds.textFieldGrp(label=name, tx=default, tcc=self.checkEmpty)
             self.default = default
         else:
             self.inpControl = cmds.textFieldGrp(label=name)
@@ -44,7 +44,6 @@ class UI:
     RadiusInput = 0
     HeightInput = 0
     LeavesPresentInput = 0
-    GenerateLeavesFastInput = 0
     BranchChangeStartInput = 0
     BranchRecursionAmountInput = 0
     BranchAndLeafDensityInput = 0
@@ -61,22 +60,21 @@ class UI:
         self.WinControl = cmds.window(t="Tree Generator")
         cmds.columnLayout(adj=True)
         self.NameInput = TextInput("Name of tree", "Tree")
-        self.RadiusInput = FloatInput("Radius of Trunk", 0.1, 2, 1)
+        self.RadiusInput = FloatInput("Radius of Trunk", 0.10000, 2, 1)
         self.HeightInput = IntInput("Height of Trunk", 1, 100, 20)
         self.LeavesPresentInput = BoolInput("Generate Leaves", True)
-        self.GenerateLeavesFastInput = BoolInput("Generate leaves quickly", True)
 
-        self.BranchChangeStartInput = FloatInput("Branch size start point", 0, 1, 0.8)
+        self.BranchChangeStartInput = FloatInput("Branch size start point", 0, 1, 0.80000)
         self.BranchRecursionAmountInput = IntInput("Branch recursion count", 1, 5, 3)
-        self.BranchAndLeafDensityInput = FloatInput("Density of branches and leaves", 0, 1, 0.2)
-        self.PlacementHeightInput = FloatInput("Height to start generating objects on branches", 0, 1, 0.6)
+        self.BranchAndLeafDensityInput = FloatInput("Density of branches and leaves", 0, 1, 0.20000)
+        self.PlacementHeightInput = FloatInput("Height to start generating objects on branches", 0, 1, 0.60000)
 
-        self.AnimationStartInput = IntInput("Animation Start frame", 0, 999999, 0)
-        self.AnimationStopInput = IntInput("Animation Stop frame", 0, 999999, 500)
-        self.AnimationStepInput = IntInput("Animation Step count", 0, 999999, 50)
+        self.AnimationStartInput = IntInput("Animation Start frame", 0, 1000, 0)
+        self.AnimationStopInput = IntInput("Animation Stop frame", 0, 1000, 500)
+        self.AnimationStepInput = IntInput("Animation Step count", 0, 1000, 50)
         self.AnimationVarianceInput = IntInput("Animation magnitude", 0, 90, 10)
 
-        self.RSeedInput = IntInput("Randomness seed", 1, 999999, 1)
+        self.RSeedInput = IntInput("Randomness seed", 1, 9999999, 1)
 
         self.GenerateButton = cmds.button(l="Generate Tree", c=self.GenerateTree)
         self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
@@ -85,7 +83,7 @@ class UI:
     def Cancel(self, *args):
         cmds.deleteUI(self.WinControl)
     def GenerateTree(self, *args):
-        treeItem = Tree(self.NameInput.getValue(), self.RadiusInput.getValue(), self.HeightInput.getValue(), self.LeavesPresentInput.getValue(), self.AnimationVarianceInput.getValue(), self.AnimationStartInput.getValue(), self.AnimationStopInput.getValue(), self.AnimationStepInput.getValue(), self.PlacementHeightInput.getValue(), self.GenerateLeavesFastInput.getValue())
+        treeItem = Tree(self.NameInput.getValue(), self.RadiusInput.getValue(), self.HeightInput.getValue(), self.LeavesPresentInput.getValue(), self.AnimationVarianceInput.getValue(), self.AnimationStartInput.getValue(), self.AnimationStopInput.getValue(), self.AnimationStepInput.getValue(), self.PlacementHeightInput.getValue())
         
         density = self.BranchAndLeafDensityInput.getValue()
         branchStart = self.BranchChangeStartInput.getValue()
@@ -112,12 +110,12 @@ class Tree:
         with contextlib.suppress(Exception):
             cmds.delete(self.name)
         self.generateCurve(self.name, self.height, (0, 0, 0), branchStart)
-        self.sweepCurve(self.name, (0,0,0), self.radius * 2, branchStart)
+        self.sweepCurve(self.name, (0,0,0), self.radius, branchStart)
         self.createBranch(branchStart, branchStart / branchRecLevel, self.name, density / 2)
         cmds.playbackOptions(minTime=self.animStart, maxTime=self.animStop, l="continuous")
         cmds.refresh(f=1)
         
-    def __init__(self, name, radius, height, leaves, animAmount, animStart, animEnd, animStep, genHeight, fast):
+    def __init__(self, name, radius, height, leaves, animAmount, animStart, animEnd, animStep, genHeight):
         self.name = name
         self.radius = radius
         self.height = height
@@ -127,7 +125,6 @@ class Tree:
         self.animStop = animEnd
         self.animStep = animStep
         self.genHeight = genHeight
-        self.fast = fast        
     def generateCurve(self, name, height, start: tuple, i: int = 1):
         points:list = [start]
         points.extend(
@@ -138,7 +135,9 @@ class Tree:
             )
             for j in range(m.floor(height * i) + 1)
         )
-        cmds.curve(n=name, p=points, bez=1)
+        # points.append((start[0] + (r.uniform(0, 0.2)) * m.floor(height * i), start[1] + m.floor(height * i) * i * 2, start[2] + (r.uniform(0, 0.2)) * m.floor(height * i)))
+        cmds.curve(n=name, p=points, bez=0)
+        cmds.smoothCurve(f"{name}.cv[*]", s=5)
 
     def generatePoints(self, n, density: float, height, i):
         return [
@@ -151,16 +150,7 @@ class Tree:
         cmds.xform(t=point)
         cmds.parent(f"{name}_profile", name)
         cmds.xform(f"{name}_profile", ro=(90,0,0))
-        cmds.extrude(
-            f"{name}_profile",
-            name,
-            et=2,
-            n=f"{name}_mesh",
-            fpt=1,
-            p=point,
-            sc=i,
-            po=1,
-        )
+        cmds.extrude(f"{name}_profile", name, et=2, n=f"{name}_mesh",fpt=1,p=point,sc=i,po=1,)
         cmds.parent(f"{name}_mesh", name)
         cmds.delete(f"{name}_profile")
         cmds.polyNormal(f"{name}_mesh", nm=0)
@@ -175,7 +165,7 @@ class Tree:
                 print(f"Creating branch: {newName}")
                 self.generateCurve(newName, self.height / 2, point, i)
                 cmds.parent(newName, branch)
-                self.createBranch(i - dec, dec, newName, den)
+                self.createBranch(i - dec, dec, newName, den * (1 + (den / dec)))
                 rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(60, 120) * num)}deg",0)
                 cmds.xform(newName,ws=1,rp=point, ro=rotation)
                 self.createAnim(newName,cmds.xform(newName, q=1, ro=1))
@@ -184,10 +174,7 @@ class Tree:
             elif branch != self.name and self.leaves:
                 newName = f"{branch}_Leaf{str(num)}"
                 print(f"Creating leaf: {newName}")
-                if self.fast:
-                    cmds.duplicate("Leaf1", n=newName)
-                else:
-                    cmds.instance("Leaf1", n=newName)
+                cmds.duplicate("Leaf1", n=newName)
                 cmds.parent(newName, branch)
                 cmds.xform(newName, translation=(point[0], point[1], point[2]), ws=1)
                 cmds.xform(
