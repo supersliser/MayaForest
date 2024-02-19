@@ -28,7 +28,7 @@ class IntInput:
 class FloatInput:
     inpControl = 0
     def __init__(self, name, minValue, maxValue, defaultValue = 0):
-        self.inpControl = cmds.floatSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue, cw=[1, 250])
+        self.inpControl = cmds.floatSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue, cw=[1, 300])
     def getValue(self):
         return cmds.floatSliderGrp(self.inpControl, q=1, v=1)
     
@@ -54,7 +54,7 @@ class terrainUI:
     def createTerrainUI(self):
         self.WinControl = cmds.window(t="TerrainUI")
         cmds.columnLayout(adj=True)
-        self.NameInput = TextInput("Name of terrain", "terrain")
+        self.NameInput = TextInput("Name of terrain", "Terrain")
         self.WidthInput = IntInput("Width of terrain", 1, 1000, 150)
         self.DepthInput = IntInput("Depth of terrain", 1, 1000, 150)
         self.XSubdivision = IntInput("Number of subdivisions on X axis", 1, 1000, 5)
@@ -63,16 +63,26 @@ class terrainUI:
         self.Tolerance = FloatInput("Percentage of vertices to generate trees", 0, 1, 0.4)
         self.GenerateButton = cmds.button(l="Generate Terrain", c=self.GenerateTerrain)
         self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
-        
+        cmds.showWindow(self.WinControl)
     def Cancel(self, *args):
         cmds.deleteUI(self.WinControl)
         
-    def GenerateTerrain(self, *args)
+    def GenerateTerrain(self, *args):
         terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
-        
+        points = terrainItem.getRandomVertices(self.Tolerance.getValue())
+        count = 0
+        for p in points:
+            treeUIItem = treeUI()
+            treeUIItem.createTreeUI(p, str(count), count, 1)
+            count += 1
+
+        terrainItem.smooth()
+        cmds.deleteUI(self.WinControl)
+
 class treeUI:
     WinControl = 0
+    Location = []
     NameInput = 0
     RadiusInput = 0
     HeightInput = 0
@@ -89,16 +99,20 @@ class treeUI:
     GenerateButton = 0
     CancelButton = 0
 
-    def createTreeUI(self):    
+    def createTreeUI(self, location, nameOffset, seedOffset, useDefaults):
+        if location == []:
+            self.location = [0, 0, 0]
+        else:
+            self.location = location
         self.WinControl = cmds.window(t="Tree Generator")
         cmds.columnLayout(adj=True)
-        self.NameInput = TextInput("Name of tree", "Tree")
+        self.NameInput = TextInput("Name of tree", "Tree" + nameOffset)
         self.RadiusInput = FloatInput("Radius of Trunk", 0.10000, 2, 1)
         self.HeightInput = IntInput("Height of Trunk", 1, 100, 20)
         self.LeavesPresentInput = BoolInput("Generate Leaves", True)
 
         self.BranchChangeStartInput = FloatInput("Branch size start point", 0, 1, 0.80000)
-        self.BranchRecursionAmountInput = IntInput("Branch recursion count", 1, 5, 3)
+        self.BranchRecursionAmountInput = IntInput("Branch recursion count", 1, 5, 2)
         self.BranchAndLeafDensityInput = FloatInput("Density of branches and leaves", 0, 1, 0.20000)
         self.PlacementHeightInput = FloatInput("Height to start generating objects on branches", 0, 1, 0.60000)
 
@@ -107,11 +121,14 @@ class treeUI:
         self.AnimationStepInput = IntInput("Animation Step count", 0, 1000, 50)
         self.AnimationVarianceInput = IntInput("Animation magnitude", 0, 90, 10)
 
-        self.RSeedInput = IntInput("Randomness seed", 1, 9999999, 1)
+        self.RSeedInput = IntInput("Randomness seed", 1, 9999999, 1 + seedOffset)
 
         self.GenerateButton = cmds.button(l="Generate Tree", c=self.GenerateTree)
         self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
-        cmds.showWindow(self.WinControl)
+        if useDefaults:
+            self.GenerateTree()
+        else:
+            cmds.showWindow(self.WinControl)
         
     def Cancel(self, *args):
         cmds.deleteUI(self.WinControl)
@@ -125,7 +142,7 @@ class treeUI:
         
         cmds.deleteUI(self.WinControl)
         
-        treeItem.generateTree(density, branchStart, branchRec, seed)
+        treeItem.generateTree(density, branchStart, branchRec, seed, self.location)
 class Tree:
     name = ""
     radius = 0
@@ -138,11 +155,11 @@ class Tree:
     genHeight = 0
     fast = False
     
-    def generateTree(self, density, branchStart, branchRecLevel, seed):
+    def generateTree(self, density, branchStart, branchRecLevel, seed, location):
         r.seed(seed)
         with contextlib.suppress(Exception):
             cmds.delete(self.name)
-        self.generateCurve(self.name, self.height, (0, 0, 0), branchStart)
+        self.generateCurve(self.name, self.height, location, branchStart)
         self.sweepCurve(self.name, (0,0,0), self.radius, branchStart)
         self.createBranch(branchStart, branchStart / branchRecLevel, self.name, density / 2)
         cmds.playbackOptions(minTime=self.animStart, maxTime=self.animStop, l="continuous")
@@ -265,21 +282,22 @@ class Terrain:
         cmds.setAttr(self.name+".rotate", 0, 90, 0, type="double3")
 
         #iterates through each vertex and moves it my a randomly generated amount
-        for y in range(1, self.ySub):
-            for x in range(1, self.xSub):
+        for y in range(0, self.ySub):
+            for x in range(0, self.xSub):
                 v = x + (y * self.xSub)
-                cmds.polyMoveVertex(name+".vtx[" + str(v) + "]", ty=getRandomNumber(amplitude / 2))
+                cmds.polyMoveVertex(self.name+".vtx[" + str(v) + "]", ty=(r.random() * a * 2) - a)
 
         #smooths the resulting mesh
-        cmds.polySmooth(n=name, dv=4, kb=0)
         
-    def getRandomVertices(tolerance):
+    def smooth(self):
+        cmds.polySmooth(self.name, dv=4, kb=0)
+    def getRandomVertices(self, tolerance):
         output = []
         for y in range(1, self.ySub):
             for x in range(1, self.xSub):
                 v = x + (y * self.xSub)
                 if r.random() < tolerance:
-                    output.append(name+"vtx["+str(v)+"]")
+                    output.append(cmds.xform(self.name+".vtx["+str(v)+"]", query=1, translation=1, ws=1))
         
         return output
     
