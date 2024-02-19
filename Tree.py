@@ -37,8 +37,41 @@ class BoolInput:
     def __init__(self, name, defaultState):
         self.inpControl = cmds.checkBox(l=name, v=defaultState)
     def getValue(self):
-        return cmds.checkBox(self.inpControl, q=1, v=1)
-class UI:
+        return cmds.checkBox(self.inpControl, q=1, v=1)#
+    
+class terrainUI:
+    WinControl = 0
+    NameInput = 0
+    WidthInput = 0
+    DepthInput = 0
+    XSubdivision = 0
+    YSubdivision = 0
+    Amplitude = 0
+    Tolerance = 0
+    GenerateButton = 0
+    CancelButton = 0
+    
+    def createTerrainUI(self):
+        self.WinControl = cmds.window(t="TerrainUI")
+        cmds.columnLayout(adj=True)
+        self.NameInput = TextInput("Name of terrain", "terrain")
+        self.WidthInput = IntInput("Width of terrain", 1, 1000, 150)
+        self.DepthInput = IntInput("Depth of terrain", 1, 1000, 150)
+        self.XSubdivision = IntInput("Number of subdivisions on X axis", 1, 1000, 5)
+        self.YSubdivision = IntInput("Number of subdivisions on Y axis", 1, 1000, 5)
+        self.Amplitude = FloatInput("Difference between heighest point and lowest point in terrain", 1, 10, 5)
+        self.Tolerance = FloatInput("Percentage of vertices to generate trees", 0, 1, 0.4)
+        self.GenerateButton = cmds.button(l="Generate Terrain", c=self.GenerateTerrain)
+        self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
+        
+    def Cancel(self, *args):
+        cmds.deleteUI(self.WinControl)
+        
+    def GenerateTerrain(self, *args)
+        terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
+        terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
+        
+class treeUI:
     WinControl = 0
     NameInput = 0
     RadiusInput = 0
@@ -159,8 +192,8 @@ class Tree:
     def createBranch(self, i, dec, branch, den):
         num = 0
         points = self.generatePoints(branch, den, self.genHeight, i + dec)
-        for point in points:
-            if r.random() < i:
+        if r.random() < i:
+            for point in points:
                 newName = f"{branch}_Branch{str(num)}"
                 print(f"Creating branch: {newName}")
                 self.generateCurve(newName, self.height / 2, point, i)
@@ -171,7 +204,8 @@ class Tree:
                 self.createAnim(newName,cmds.xform(newName, q=1, ro=1))
                 self.sweepCurve(newName, point, self.radius * i, i)
                 num+= 1
-            elif branch != self.name and self.leaves:
+        elif branch != self.name and self.leaves:
+            for point in points:
                 newName = f"{branch}_Leaf{str(num)}"
                 print(f"Creating leaf: {newName}")
                 cmds.duplicate("Leaf1", n=newName)
@@ -216,5 +250,39 @@ class Tree:
             )
             
             
-GUIItem = UI()
-GUIItem.createTreeUI()
+class Terrain:
+    name = ""
+    xSub = 0
+    ySub = 0
+    
+    def __init__(self, name, xSub, ySub):
+        self.name = name
+        self.xSub = xSub
+        self.ySub = ySub
+    
+    def generateTerrain(self, xSize, ySize, a):
+        cmds.polyPlane(n=self.name, w=xSize, h=ySize, sx=self.xSub, sy=self.ySub)
+        cmds.setAttr(self.name+".rotate", 0, 90, 0, type="double3")
+
+        #iterates through each vertex and moves it my a randomly generated amount
+        for y in range(1, self.ySub):
+            for x in range(1, self.xSub):
+                v = x + (y * self.xSub)
+                cmds.polyMoveVertex(name+".vtx[" + str(v) + "]", ty=getRandomNumber(amplitude / 2))
+
+        #smooths the resulting mesh
+        cmds.polySmooth(n=name, dv=4, kb=0)
+        
+    def getRandomVertices(tolerance):
+        output = []
+        for y in range(1, self.ySub):
+            for x in range(1, self.xSub):
+                v = x + (y * self.xSub)
+                if r.random() < tolerance:
+                    output.append(name+"vtx["+str(v)+"]")
+        
+        return output
+    
+    
+GUIItem = terrainUI()
+GUIItem.createTerrainUI()

@@ -1,4 +1,3 @@
-from tkinter import Y
 import maya.cmds as cmds
 import random as r
 
