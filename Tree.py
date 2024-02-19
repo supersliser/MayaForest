@@ -150,7 +150,7 @@ class Tree:
         cmds.xform(t=point)
         cmds.parent(f"{name}_profile", name)
         cmds.xform(f"{name}_profile", ro=(90,0,0))
-        cmds.extrude(f"{name}_profile", name, et=2, n=f"{name}_mesh",fpt=1,p=point,sc=i,po=1,)
+        cmds.extrude(f"{name}_profile", name, et=2, n=f"{name}_mesh",fpt=1,p=point,sc=0.5,po=1,)
         cmds.parent(f"{name}_mesh", name)
         cmds.delete(f"{name}_profile")
         cmds.polyNormal(f"{name}_mesh", nm=0)
