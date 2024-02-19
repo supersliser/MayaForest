@@ -112,6 +112,12 @@ class Tree:
         self.generateCurve(self.name, self.height, (0, 0, 0), branchStart)
         self.sweepCurve(self.name, (0,0,0), self.radius, branchStart)
         self.createBranch(branchStart, branchStart / branchRecLevel, self.name, density / 2)
+        cmds.select(cl=1)
+        # cmds.select("*_mesh")
+        
+        
+        cmds.polyNormal(f"{self.name}_mesh", nm=0)
+        cmds.hyperShade(f"{self.name}_mesh", a="BarkMat")
         cmds.playbackOptions(minTime=self.animStart, maxTime=self.animStop, l="continuous")
         cmds.refresh(f=1)
         
@@ -150,11 +156,9 @@ class Tree:
         cmds.xform(t=point)
         cmds.parent(f"{name}_profile", name)
         cmds.xform(f"{name}_profile", ro=(90,0,0))
-        cmds.extrude(f"{name}_profile", name, et=2, n=f"{name}_mesh",fpt=1,p=point,sc=0.5,po=1,)
+        cmds.extrude(f"{name}_profile", name, et=2, n=f"{name}_mesh",fpt=1,p=point,sc=0.5,po=0, mi=1)
         cmds.parent(f"{name}_mesh", name)
         cmds.delete(f"{name}_profile")
-        cmds.polyNormal(f"{name}_mesh", nm=0)
-        cmds.hyperShade(f"{name}_mesh", a="BarkMat")
 
     def createBranch(self, i, dec, branch, den):
         num = 0
@@ -165,11 +169,13 @@ class Tree:
                 print(f"Creating branch: {newName}")
                 self.generateCurve(newName, self.height / 2, point, i)
                 cmds.parent(newName, branch)
-                self.createBranch(i - dec, dec, newName, den * (1 + (den / dec)))
-                rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(60, 120) * num)}deg",0)
+                rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(0, 360) * num)}deg",0)
                 cmds.xform(newName,ws=1,rp=point, ro=rotation)
                 self.createAnim(newName,cmds.xform(newName, q=1, ro=1))
                 self.sweepCurve(newName, point, self.radius * i, i)
+                self.createBranch(i - dec, dec, newName, den * (1 + (den / dec)))
+                cmds.select(cl=1)
+                cmds.attachSurface(newName, branch)
                 num+= 1
             elif branch != self.name and self.leaves:
                 newName = f"{branch}_Leaf{str(num)}"
