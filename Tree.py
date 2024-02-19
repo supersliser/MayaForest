@@ -28,7 +28,7 @@ class IntInput:
 class FloatInput:
     inpControl = 0
     def __init__(self, name, minValue, maxValue, defaultValue = 0):
-        self.inpControl = cmds.floatSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue)
+        self.inpControl = cmds.floatSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue, cw=[1, 250])
     def getValue(self):
         return cmds.floatSliderGrp(self.inpControl, q=1, v=1)
     
@@ -166,7 +166,7 @@ class Tree:
                 self.generateCurve(newName, self.height / 2, point, i)
                 cmds.parent(newName, branch)
                 self.createBranch(i - dec, dec, newName, den * (1 + (den / dec)))
-                rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(60, 120) * num)}deg",0)
+                rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(0, 360) * num)}deg",0)
                 cmds.xform(newName,ws=1,rp=point, ro=rotation)
                 self.createAnim(newName,cmds.xform(newName, q=1, ro=1))
                 self.sweepCurve(newName, point, self.radius * i, i)
