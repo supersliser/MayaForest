@@ -11,7 +11,7 @@ class TextInput:
             self.inpControl = cmds.textFieldGrp(label=name, tx=default, tcc=self.checkEmpty)
             self.default = default
         else:
-            self.inpControl = cmds.textFieldGrp(label=name)
+            self.inpControl = cmds.textFieldGrp(label=name, tx=default)
     def checkEmpty(self, *args):
         if self.getValue() == "":
             cmds.textFieldGrp(self.inpControl, e=1, tx=self.default)
@@ -55,10 +55,10 @@ class terrainUI:
         self.WinControl = cmds.window(t="TerrainUI")
         cmds.columnLayout(adj=True)
         self.NameInput = TextInput("Name of terrain", "Terrain")
-        self.WidthInput = IntInput("Width of terrain", 1, 1000, 150)
-        self.DepthInput = IntInput("Depth of terrain", 1, 1000, 150)
-        self.XSubdivision = IntInput("Number of subdivisions on X axis", 1, 1000, 5)
-        self.YSubdivision = IntInput("Number of subdivisions on Y axis", 1, 1000, 5)
+        self.WidthInput = IntInput("Width of terrain", 1, 200, 150)
+        self.DepthInput = IntInput("Depth of terrain", 1, 200, 150)
+        self.XSubdivision = IntInput("Number of subdivisions on X axis", 1, 20, 5)
+        self.YSubdivision = IntInput("Number of subdivisions on Y axis", 1, 20, 5)
         self.Amplitude = FloatInput("Difference between heighest point and lowest point in terrain", 1, 10, 5)
         self.Tolerance = FloatInput("Percentage of vertices to generate trees", 0, 1, 0.4)
         self.GenerateButton = cmds.button(l="Generate Terrain", c=self.GenerateTerrain)
@@ -72,11 +72,14 @@ class terrainUI:
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
         points = terrainItem.getRandomVertices(self.Tolerance.getValue())
         count = 0
+        trees = []
         for p in points:
-            treeUIItem = treeUI()
-            treeUIItem.createTreeUI(p, str(count), count, 1)
+            temp = Tree()
+            item = temp.openUI(count, p)
+            print(item.name)
+            cmds.parent(terrainItem.name, item.name)
+            trees.append(item)
             count += 1
-
         terrainItem.smooth()
         cmds.deleteUI(self.WinControl)
 
@@ -99,7 +102,7 @@ class treeUI:
     GenerateButton = 0
     CancelButton = 0
 
-    def createTreeUI(self, location, nameOffset, seedOffset, useDefaults):
+    def createTreeUI(self, location, nameOffset = "", seedOffset = 0, useDefaults = True):
         if location == []:
             self.location = [0, 0, 0]
         else:
@@ -126,7 +129,7 @@ class treeUI:
         self.GenerateButton = cmds.button(l="Generate Tree", c=self.GenerateTree)
         self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
         if useDefaults:
-            self.GenerateTree()
+            return self.GenerateTree()
         else:
             cmds.showWindow(self.WinControl)
         
@@ -143,6 +146,7 @@ class treeUI:
         cmds.deleteUI(self.WinControl)
         
         treeItem.generateTree(density, branchStart, branchRec, seed, self.location)
+        return treeItem
 class Tree:
     name = ""
     radius = 0
@@ -153,8 +157,11 @@ class Tree:
     animStop = 0
     animStep = 0
     genHeight = 0
-    fast = False
     
+    def openUI(self, i, point):
+        treeGUI = treeUI()
+        return treeGUI.createTreeUI(point, str(i), i)
+        
     def generateTree(self, density, branchStart, branchRecLevel, seed, location):
         r.seed(seed)
         with contextlib.suppress(Exception):
@@ -165,7 +172,7 @@ class Tree:
         cmds.playbackOptions(minTime=self.animStart, maxTime=self.animStop, l="continuous")
         cmds.refresh(f=1)
         
-    def __init__(self, name, radius, height, leaves, animAmount, animStart, animEnd, animStep, genHeight):
+    def __init__(self, name = "", radius = 0, height = 0, leaves = False, animAmount = 0, animStart = 0, animEnd = 0, animStep = 0, genHeight = 0):
         self.name = name
         self.radius = radius
         self.height = height
