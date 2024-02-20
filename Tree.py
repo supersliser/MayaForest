@@ -74,11 +74,10 @@ class terrainUI:
         count = 0
         trees = []
         for p in points:
-            temp = Tree()
-            item = temp.openUI(count, p)
-            print(item.name)
-            cmds.parent(terrainItem.name, item.name)
-            trees.append(item)
+            temp = Tree(terrainItem.name + "_Tree" + str(count), r.uniform(0.5, 1.5), r.uniform(15, 40), True, 50, 0, 250, 50, 0.7)
+            temp.generateTree(r.uniform(0.15, 0.25), 1, r.uniform(2, 3), count, p, terrainItem.name)
+            # temp.openUI(count, p, terrainItem.name)
+            trees.append(temp)
             count += 1
         terrainItem.smooth()
         cmds.deleteUI(self.WinControl)
@@ -101,12 +100,14 @@ class treeUI:
     RSeedInput = 0
     GenerateButton = 0
     CancelButton = 0
+    Parent = 0
 
-    def createTreeUI(self, location, nameOffset = "", seedOffset = 0, useDefaults = True):
+    def createTreeUI(self, terrainParent, location, nameOffset = "", seedOffset = 0, useDefaults = True):
         if location == []:
             self.location = [0, 0, 0]
         else:
             self.location = location
+        self.Parent = terrainParent
         self.WinControl = cmds.window(t="Tree Generator")
         cmds.columnLayout(adj=True)
         self.NameInput = TextInput("Name of tree", "Tree" + nameOffset)
@@ -114,7 +115,7 @@ class treeUI:
         self.HeightInput = IntInput("Height of Trunk", 1, 100, 20)
         self.LeavesPresentInput = BoolInput("Generate Leaves", True)
 
-        self.BranchChangeStartInput = FloatInput("Branch size start point", 0, 1, 0.80000)
+        self.BranchChangeStartInput = FloatInput("Branch size start point", 0, 1, 1.0000)
         self.BranchRecursionAmountInput = IntInput("Branch recursion count", 1, 5, 2)
         self.BranchAndLeafDensityInput = FloatInput("Density of branches and leaves", 0, 1, 0.20000)
         self.PlacementHeightInput = FloatInput("Height to start generating objects on branches", 0, 1, 0.60000)
@@ -145,7 +146,7 @@ class treeUI:
         
         cmds.deleteUI(self.WinControl)
         
-        treeItem.generateTree(density, branchStart, branchRec, seed, self.location)
+        treeItem.generateTree(density, branchStart, branchRec, seed, self.location, self.Parent)
         return treeItem
 class Tree:
     name = ""
@@ -158,18 +159,20 @@ class Tree:
     animStep = 0
     genHeight = 0
     
-    def openUI(self, i, point):
+    def openUI(self, i, point, terrain):
         treeGUI = treeUI()
-        return treeGUI.createTreeUI(point, str(i), i)
+        return treeGUI.createTreeUI(terrain, point, str(i), i)
         
-    def generateTree(self, density, branchStart, branchRecLevel, seed, location):
+    def generateTree(self, density, branchStart, branchRecLevel, seed, location, terrain):
         r.seed(seed)
         with contextlib.suppress(Exception):
             cmds.delete(self.name)
-        self.generateCurve(self.name, self.height, location, branchStart)
+        self.generateCurve(self.name, self.height, (0,0,0), branchStart)
         self.sweepCurve(self.name, (0,0,0), self.radius, branchStart)
         self.createBranch(branchStart, branchStart / branchRecLevel, self.name, density / 2)
+        cmds.xform(self.name, t=(location[0], location[1] - 1, location[2]))
         cmds.playbackOptions(minTime=self.animStart, maxTime=self.animStop, l="continuous")
+        cmds.parent(self.name, terrain)
         cmds.refresh(f=1)
         
     def __init__(self, name = "", radius = 0, height = 0, leaves = False, animAmount = 0, animStart = 0, animEnd = 0, animStep = 0, genHeight = 0):
@@ -204,7 +207,7 @@ class Tree:
 
     def sweepCurve(self, name, point, radius, i):
         cmds.circle(n=f"{name}_profile", r=radius)
-        cmds.xform(t=point)
+        cmds.xform(f"{name}_profile", t=point)
         cmds.parent(f"{name}_profile", name)
         cmds.xform(f"{name}_profile", ro=(90,0,0))
         cmds.extrude(f"{name}_profile", name, et=2, n=f"{name}_mesh",fpt=1,p=point,sc=0.5,po=1,)
@@ -216,13 +219,13 @@ class Tree:
     def createBranch(self, i, dec, branch, den):
         num = 0
         points = self.generatePoints(branch, den, self.genHeight, i + dec)
-        if r.random() < i:
+        if r.random() <= i:
             for point in points:
                 newName = f"{branch}_Branch{str(num)}"
                 print(f"Creating branch: {newName}")
                 self.generateCurve(newName, self.height / 2, point, i)
                 cmds.parent(newName, branch)
-                self.createBranch(i - dec, dec, newName, den * (1 + (den / dec)))
+                self.createBranch(i - dec, dec, newName, den * (1 + den))
                 rotation = (f"{str(r.uniform(20, 60))}deg",f"{str(r.uniform(0, 360) * num)}deg",0)
                 cmds.xform(newName,ws=1,rp=point, ro=rotation)
                 self.createAnim(newName,cmds.xform(newName, q=1, ro=1))
@@ -242,6 +245,7 @@ class Tree:
                         f"{str(r.uniform(0, 360))}deg",
                         f"{str(r.uniform(0, 360))}deg",
                     ),
+                    os=1
                 )
                 self.createAnim(newName, cmds.xform(newName, q=1, ro=1))
                 num += 1
@@ -300,10 +304,10 @@ class Terrain:
         cmds.polySmooth(self.name, dv=4, kb=0)
     def getRandomVertices(self, tolerance):
         output = []
-        for y in range(1, self.ySub):
-            for x in range(1, self.xSub):
+        for y in range(self.ySub + 1):
+            for x in range(self.xSub + 1):
                 v = x + (y * self.xSub)
-                if r.random() < tolerance:
+                if r.random() <= tolerance:
                     output.append(cmds.xform(self.name+".vtx["+str(v)+"]", query=1, translation=1, ws=1))
         
         return output
