@@ -104,7 +104,7 @@ class Tree:
     def generateTree(self, density, branchStart, branchRecLevel, location, terrain, height):
         with contextlib.suppress(Exception):
             cmds.delete(self.name)
-        self.generateCurve(self.name, [0,0,0], height, branchStart)
+        self.generateCurve(self.name, [0,0,0], height * 2, branchStart)
         self.sweepCurve(self.name,[0,0,0], self.radius, branchStart)
         self.createBranch(branchStart, branchStart / branchRecLevel, self.name, density / 2, height)
         cmds.xform(self.name, t=(location[0], location[1] - 1, location[2]))
@@ -241,14 +241,17 @@ class Terrain:
             for x in range(0, self.xSub):
                 v = x + (y * self.xSub)
                 cmds.polyMoveVertex(self.name+".vtx[" + str(v) + "]", ty=(r.random() * a * 2) - a)
+        cmds.hyperShade(self.name, a="MudMat")
 
     def smooth(self):
         cmds.polySmooth(self.name, dv=4, kb=0)
     def getRandomVertices(self, tolerance):
         output = []
-        for y in range(self.ySub + 1):
-            for x in range(self.xSub + 1):
-                v = x + (y * self.xSub)
+        xv = self.xSub + 2
+        yv = self.ySub + 2
+        for y in range(yv):
+            for x in range(xv):
+                v = x + (y * xv)
                 if r.random() <= tolerance:
                     output.append(cmds.xform(self.name+".vtx["+str(v)+"]", query=1, translation=1, ws=1))
         
