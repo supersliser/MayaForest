@@ -247,8 +247,8 @@ class Terrain:
         cmds.polySmooth(self.name, dv=4, kb=0)
     def getRandomVertices(self, tolerance):
         output = []
-        xv = self.xSub + 2
-        yv = self.ySub + 2
+        xv = self.xSub + 1
+        yv = self.ySub + 1
         for y in range(yv):
             for x in range(xv):
                 v = x + (y * xv)
