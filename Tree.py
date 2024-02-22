@@ -37,7 +37,7 @@ class BoolInput:
     def __init__(self, name, defaultState):
         self.inpControl = cmds.checkBox(l=name, v=defaultState)
     def getValue(self):
-        return cmds.checkBox(self.inpControl, q=1, v=1)#
+        return cmds.checkBox(self.inpControl, q=1, v=1)
     
 class terrainUI:
     WinControl = 0
@@ -77,13 +77,14 @@ class terrainUI:
         count = 0
         trees = []
         for p in points:
-            temp = Tree(terrainItem.name + "_Tree" + str(count), r.uniform(0.5, 1.5), True, 50, 0, 250, 50, 0.7)
-            temp.generateTree(r.uniform(0.15, 0.25), 1, r.uniform(2, 3), count, p, terrainItem.name, r.uniform(10, 30))
+            temp = Tree(terrainItem.name + "_Tree" + str(count), r.uniform(0.5, 1.5), True, 50, 0, 250, 50, r.uniform(0.7, 1))
+            temp.generateTree(r.uniform(0.15, 0.25), 1, r.uniform(2, 3), count, p, terrainItem.name, r.uniform(20, 30))
             # temp.openUI(count, p, terrainItem.name)
             trees.append(temp)
             count += 1
         terrainItem.smooth()
         cmds.deleteUI(self.WinControl)
+        
 class Tree:
     name = ""
     radius = 0
@@ -102,7 +103,7 @@ class Tree:
         r.seed(seed)
         with contextlib.suppress(Exception):
             cmds.delete(self.name)
-        self.generateCurve(self.name, [0,0,0] height, branchStart)
+        self.generateCurve(self.name, [0,0,0], height, branchStart)
         self.sweepCurve(self.name,[0,0,0], self.radius, branchStart)
         self.createBranch(branchStart, branchStart / branchRecLevel, self.name, density / 2, height)
         cmds.xform(self.name, t=(location[0], location[1] - 1, location[2]))
@@ -122,12 +123,13 @@ class Tree:
         self.genHeight = genHeight
     def generateCurve(self, name, start, height, i: int = 1):
         points:list = [start]
+        j = 0.0
         while j < 1:
             points.append(
                 [
-                    points[-1][0] + (m.asin(j) / 90),
+                    points[-1][0] + (m.asin(j) / 90) * 3,
                     start[1] + (j * height),
-                    points[-1][2] + (r.uniform(0, 0.2)) * j,
+                    points[-1][2],
                 ]
             )
             j += 0.1
