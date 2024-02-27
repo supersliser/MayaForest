@@ -40,29 +40,18 @@ class BoolInput:
         return cmds.checkBox(self.inpControl, q=1, v=1)
     
 class terrainUI:
-    WinControl = 0
-    NameInput = 0
-    WidthInput = 0
-    DepthInput = 0
-    XSubdivision = 0
-    YSubdivision = 0
-    Amplitude = 0
-    Tolerance = 0
-    GenerateButton = 0
-    CancelButton = 0
-    RSeedInput = 0
-    
     def createTerrainUI(self):
         self.WinControl = cmds.window(t="TerrainUI")
         cmds.columnLayout(adj=True)
         self.NameInput = TextInput("Name of terrain", "Terrain")
-        self.WidthInput = IntInput("Width of terrain", 1, 200, 50)
-        self.DepthInput = IntInput("Depth of terrain", 1, 200, 50)
-        self.XSubdivision = IntInput("Number of subdivisions on X axis", 1, 20, 5)
-        self.YSubdivision = IntInput("Number of subdivisions on Y axis", 1, 20, 5)
+        self.WidthInput = IntInput("Width of terrain", 1, 2000, 150)
+        self.DepthInput = IntInput("Depth of terrain", 1, 2000, 150)
+        self.XSubdivision = IntInput("Number of subdivisions on X axis", 1, 200, 5)
+        self.YSubdivision = IntInput("Number of subdivisions on Y axis", 1, 200, 5)
+        self.TreeVariants = IntInput("Number of different types of trees to use", 1, 10, 4)
         self.Amplitude = FloatInput("Difference between highest point and lowest point in terrain", 1, 10, 5)
         self.Tolerance = FloatInput("Percentage of vertices to generate trees", 0, 1, 0.4)
-        self.RSeedInput = IntInput("Randomness seed", 1, 9999999, 1)
+        self.Seed = IntInput("Randomness seed", 1, 9999999, 1)
         self.GenerateButton = cmds.button(l="Generate Terrain", c=self.GenerateTerrain)
         self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
         cmds.showWindow(self.WinControl)
@@ -70,23 +59,20 @@ class terrainUI:
         cmds.deleteUI(self.WinControl)
         
     def GenerateTerrain(self, *args):
-        seed = self.RSeedInput.getValue()
-        r.seed(seed)
+        r.seed(self.Seed.getValue())
         terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
-        points = terrainItem.getRandomVertices(self.Tolerance.getValue())
-        count = 0
+        points = terrainItem.generateRandomSurfacePoints(self.Tolerance.getValue())
         trees = []
-        for p in points:
-            r.seed(seed + count)
-            temp = Tree(terrainItem.name + "_Tree" + str(count), r.uniform(0.5, 1.5), True, 50, 0, 250, 50, r.uniform(0.3, 1))
-            temp.generateTree(r.uniform(0.15, 0.25), 1, r.uniform(2, 3), p, terrainItem.name, r.uniform(10, 30))
-            # temp.openUI(count, p, terrainItem.name)
+        for t in range(self.TreeVariants.getValue()):
+            temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), r.uniform(15, 40), True, 50, 0, 250, 50, 0.7)
+            temp.generateTree(r.uniform(0.15, 0.25), 1, r.uniform(2, 4), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name)
             trees.append(temp)
-            count += 1
+        for p in points:
+            trees[r.randint(0, len(trees))].placeTree(p, self.NameInput.getValue())
         terrainItem.smooth()
         cmds.deleteUI(self.WinControl)
-        
+
 class Tree:
     name = ""
     radius = 0
@@ -96,10 +82,16 @@ class Tree:
     animStop = 0
     animStep = 0
     genHeight = 0
+    instances = 0
     
-    def openUI(self, i, point, terrain):
-        treeGUI = treeUI()
-        return treeGUI.createTreeUI(terrain, point, str(i), i)
+    def placeTree(self, location, parent):
+        newName = self.name + "_Inst" + str(self.instances)
+        cmds.instance(self.name, n=newName)
+        self.instances += 1
+        cmds.parent(newName, parent)
+        cmds.xform(newName, t=(location[0], location[1], location[2]))
+        cmds.refresh(f=1)
+
         
     def generateTree(self, density, branchStart, branchRecLevel, location, terrain, height):
         with contextlib.suppress(Exception):
@@ -244,18 +236,28 @@ class Terrain:
         cmds.hyperShade(self.name, a="MudMat")
 
     def smooth(self):
-        cmds.polySmooth(self.name, dv=4, kb=0)
-    def getRandomVertices(self, tolerance):
-        output = []
-        xv = self.xSub + 1
-        yv = self.ySub + 1
-        for y in range(yv):
-            for x in range(xv):
-                v = x + (y * xv)
-                if r.random() <= tolerance:
-                    output.append(cmds.xform(self.name+".vtx["+str(v)+"]", query=1, translation=1, ws=1))
+        cmds.polySmooth(self.name, dv=4, kb=0)        #algorithm to generate points along surface
         
-        return output
+    def generateRandomSurfacePoints(self, tolerance):
+        """
+        This function generates a list of points randomly placed on a polyPlane surface
+        based on a given probability tolerance.
+
+        Args:
+        tolerance (float): The probability threshold for placing a point.
+
+        Returns:
+        list: A list of point coordinates on the surface.
+        """
+        surfacePoints = []
+        for y in range(self.ySub + 1):
+            for x in range(self.xSub + 1):
+                v = x + (y * self.xSub)
+                if r.random() <= tolerance:
+                    pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, worldSpace=True)
+                    surfacePoints.append(pointPosition)
+
+        return surfacePoints
     
     
 GUIItem = terrainUI()
