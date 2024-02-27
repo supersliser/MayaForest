@@ -65,11 +65,11 @@ class terrainUI:
         points = terrainItem.generateRandomSurfacePoints(self.Tolerance.getValue())
         trees = []
         for t in range(self.TreeVariants.getValue()):
-            temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), r.uniform(15, 40), True, 50, 0, 250, 50, 0.7)
-            temp.generateTree(r.uniform(0.15, 0.25), 1, r.uniform(2, 4), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name)
+            temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), True, 50, 0, 250, 50, 0.7)
+            temp.generateTree(r.uniform(0.15, 0.25), 1, r.uniform(2, 4), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.uniform(15, 40))
             trees.append(temp)
         for p in points:
-            trees[r.randint(0, len(trees))].placeTree(p, self.NameInput.getValue())
+            trees[r.randint(0, len(trees))].placeTree(p, terrainItem.name)
         terrainItem.smooth()
         cmds.deleteUI(self.WinControl)
 
@@ -93,7 +93,8 @@ class Tree:
         cmds.refresh(f=1)
 
         
-    def generateTree(self, density, branchStart, branchRecLevel, location, terrain, height):
+    def generateTree(self, density, branchStart, branchRecLevel, seed, location, terrain, height):
+        r.seed(seed)
         with contextlib.suppress(Exception):
             cmds.delete(self.name)
         self.generateCurve(self.name, [0,0,0], height * 2, branchStart)
@@ -224,7 +225,7 @@ class Terrain:
         
         try:
             cmds.delete(self.name, hr=1)
-        except:
+        except:  # noqa: E722
             pass
         cmds.polyPlane(n=self.name, w=xSize, h=ySize, sx=self.xSub, sy=self.ySub)
         cmds.setAttr(self.name+".rotate", 0, 90, 0, type="double3")
