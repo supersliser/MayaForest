@@ -66,10 +66,13 @@ class terrainUI:
         trees = []
         for t in range(self.TreeVariants.getValue()):
             temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), True, 50, 0, 250, 50, 0.7)
-            temp.generateTree(r.uniform(0.15, 0.25), 1, r.uniform(2, 4), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.uniform(15, 40))
+            temp.generateTree(r.uniform(0.15, 0.25), 1, r.randint(2, 3), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.randint(15, 40))
             trees.append(temp)
         for p in points:
-            trees[r.randint(0, len(trees))].placeTree(p, terrainItem.name)
+            trees[r.randint(0, len(trees) - 1)].placeTree(p)
+            
+        for t in trees:
+            t.hide()
         terrainItem.smooth()
         cmds.deleteUI(self.WinControl)
 
@@ -84,15 +87,16 @@ class Tree:
     genHeight = 0
     instances = 0
     
-    def placeTree(self, location, parent):
+    def placeTree(self, location):
         newName = self.name + "_Inst" + str(self.instances)
-        cmds.instance(self.name, n=newName)
+        print(f"Placing tree: {newName}")
+        cmds.instance(self.name, n=newName, st=0)
         self.instances += 1
-        cmds.parent(newName, parent)
-        cmds.xform(newName, t=(location[0], location[1], location[2]))
-        cmds.refresh(f=1)
+        cmds.move(location[0], location[1], location[2], newName)
+        cmds.rotate("0deg", str(r.uniform(0, 360)) + "deg", "0deg", newName, os=1)
 
-        
+    def hide(self):
+        cmds.setAttr(self.name + ".visibility", 0)
     def generateTree(self, density, branchStart, branchRecLevel, seed, location, terrain, height):
         r.seed(seed)
         with contextlib.suppress(Exception):
@@ -104,7 +108,6 @@ class Tree:
         cmds.playbackOptions(minTime=self.animStart, maxTime=self.animStop, l="continuous")
         cmds.xform(self.name, ro=("0deg", str(r.uniform(0, 360)) + "deg", "0deg"), rp=(0, 0, 0), os=1)
         cmds.parent(self.name, terrain)
-        cmds.refresh(f=1)
         
     def __init__(self, name = "", radius = 0, leaves = False, animAmount = 0, animStart = 0, animEnd = 0, animStep = 0, genHeight = 0):
         self.name = name
@@ -165,23 +168,32 @@ class Tree:
                 self.sweepCurve(newName, point[0], self.radius * 0.5 * point[1], i)
                 num+= 1
         elif branch != self.name and self.leaves:
-            for point in points:
-                newName = f"{branch}_Leaf{str(num)}"
-                print(f"Creating leaf: {newName}")
-                cmds.duplicate("Leaf1", n=newName)
-                cmds.parent(newName, branch)
-                cmds.xform(newName, translation=(point[0][0], point[0][1], point[0][2]), ws=1)
-                cmds.xform(
-                    newName,
-                    ro=(
-                        f"{str(r.uniform(0, 360))}deg",
-                        f"{str(r.uniform(0, 360))}deg",
-                        f"{str(r.uniform(0, 360))}deg",
-                    ),
+            newName = f"{branch}_Leaf{str(num)}"
+            cmds.duplicate("Leaf1", n=newName)
+            cmds.parent(newName, branch)
+            cmds.xform(newName, translation=(points[0][0][0], points[0][0][1], points[0][0][2]), ws=1)
+            cmds.xform(
+                newName,
+                ro=(
+                    f"{str(r.uniform(0, 360))}deg",
+                    f"{str(r.uniform(0, 360))}deg",
+                    f"{str(r.uniform(0, 360))}deg",
+                ),
+                os=1
+            )
+            num += 1
+            for point in points[1:]:
+                newIName = f"{branch}_Leaf{str(num)}"
+                cmds.instance(newName, n=newIName, st=0)
+                cmds.move(point[0][0], point[0][1], point[0][2], newIName)
+                cmds.rotate(
+                    f"{str(r.uniform(0, 360))}deg",
+                    f"{str(r.uniform(0, 360))}deg",
+                    f"{str(r.uniform(0, 360))}deg",
+                    newIName,
                     os=1
                 )
-                self.createAnim(newName, cmds.xform(newName, q=1, ro=1))
-                num += 1
+                num += 1            
 
     def createAnim(self, name, itemRotation):
         for i in range(m.floor(self.animStart), m.floor(self.animStop), m.floor(self.animStep * 2)):
@@ -255,7 +267,7 @@ class Terrain:
             for x in range(self.xSub + 1):
                 v = x + (y * self.xSub)
                 if r.random() <= tolerance:
-                    pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, worldSpace=True)
+                    pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
                     surfacePoints.append(pointPosition)
 
         return surfacePoints
