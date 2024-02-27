@@ -73,55 +73,6 @@ class terrainUI:
         terrainItem.smooth()
         cmds.deleteUI(self.WinControl)
 
-class treeUI:
-    Location = []
-
-    def createTreeUI(self, terrainParent, location, nameOffset = "", seedOffset = 0, useDefaults = True):
-        if location == []:
-            self.location = [0, 0, 0]
-        else:
-            self.location = location
-        self.Parent = terrainParent
-        self.WinControl = cmds.window(t="Tree Generator")
-        cmds.columnLayout(adj=True)
-        self.NameInput = TextInput("Name of tree", "Tree" + nameOffset)
-        self.RadiusInput = FloatInput("Radius of Trunk", 0.10000, 2, 1)
-        self.HeightInput = IntInput("Height of Trunk", 1, 100, 20)
-        self.LeavesPresentInput = BoolInput("Generate Leaves", True)
-
-        self.BranchChangeStartInput = FloatInput("Branch size start point", 0, 1, 1.0000)
-        self.BranchRecursionAmountInput = IntInput("Branch recursion count", 1, 5, 2)
-        self.BranchAndLeafDensityInput = FloatInput("Density of branches and leaves", 0, 1, 0.20000)
-        self.PlacementHeightInput = FloatInput("Height to start generating objects on branches", 0, 1, 0.60000)
-
-        self.AnimationStartInput = IntInput("Animation Start frame", 0, 1000, 0)
-        self.AnimationStopInput = IntInput("Animation Stop frame", 0, 1000, 500)
-        self.AnimationStepInput = IntInput("Animation Step count", 0, 1000, 50)
-        self.AnimationVarianceInput = IntInput("Animation magnitude", 0, 90, 10)
-
-        self.RSeedInput = IntInput("Randomness seed", 1, 9999999, 1 + seedOffset)
-
-        self.GenerateButton = cmds.button(l="Generate Tree", c=self.GenerateTree)
-        self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
-        if useDefaults:
-            return self.GenerateTree()
-        else:
-            cmds.showWindow(self.WinControl)
-        
-    def Cancel(self, *args):
-        cmds.deleteUI(self.WinControl)
-    def GenerateTree(self, *args):
-        treeItem = Tree(self.NameInput.getValue(), self.RadiusInput.getValue(), self.HeightInput.getValue(), self.LeavesPresentInput.getValue(), self.AnimationVarianceInput.getValue(), self.AnimationStartInput.getValue(), self.AnimationStopInput.getValue(), self.AnimationStepInput.getValue(), self.PlacementHeightInput.getValue())
-        
-        density = self.BranchAndLeafDensityInput.getValue()
-        branchStart = self.BranchChangeStartInput.getValue()
-        branchRec = self.BranchRecursionAmountInput.getValue()
-        seed = self.RSeedInput.getValue()
-        
-        cmds.deleteUI(self.WinControl)
-        
-        treeItem.generateTree(density, branchStart, branchRec, seed, self.location, self.Parent)
-        return treeItem
 class Tree:
     name = ""
     radius = 0
@@ -141,10 +92,6 @@ class Tree:
         cmds.parent(newName, parent)
         cmds.xform(newName, t=(location[0], location[1], location[2]))
         cmds.refresh(f=1)
-    
-    def openUI(self, i, point, terrain):
-        treeGUI = treeUI()
-        return treeGUI.createTreeUI(terrain, point, str(i), i)
         
     def generateTree(self, density, branchStart, branchRecLevel, seed, location, terrain):
         r.seed(seed)
