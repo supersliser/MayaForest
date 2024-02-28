@@ -109,6 +109,8 @@ class terrainUI:
         self.DepthInput = IntInput("Depth of terrain", 1, 2000, 150)
         self.XSubdivision = IntInput("Number of subdivisions on X axis", 3, 200, 5)
         self.YSubdivision = IntInput("Number of subdivisions on Y axis", 3, 200, 5)
+        self.TreesExist = BoolInput("Generate Trees", True)
+        self.GrassExist = BoolInput("Generate Grass", True)
         self.TreeVariants = IntInput("Number of different types of trees to use", 1, 10, 4)
         self.Amplitude = FloatInput("Difference between highest point and lowest point in terrain", 1, 10, 5)
         self.Tolerance = FloatInput("Percentage of vertices to generate trees", 0, 1, 0.4)
@@ -135,18 +137,24 @@ class terrainUI:
         r.seed(self.Seed.getValue())
         terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
-        points = terrainItem.generateRandomSurfacePoints(self.Tolerance.getValue())
-        trees = []
-        for t in range(self.TreeVariants.getValue()):
-            temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), True, 50, 0, 250, 50, 0.7)
-            temp.generateTree(r.uniform(0.15, 0.25), 1, r.randint(2, 3), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.randint(15, 40))
-            trees.append(temp)
-        for p in points:
-            trees[r.randint(0, len(trees) - 1)].placeTree(p)
-            
-        for t in trees:
-            t.hide()
+        if self.TreesExist.getValue():
+            points = terrainItem.generateRandomSurfacePoints(self.Tolerance.getValue())
+            trees = []
+            for t in range(self.TreeVariants.getValue()):
+                temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), True, 50, 0, 250, 50, 0.7)
+                temp.generateTree(r.uniform(0.15, 0.25), 1, r.randint(2, 3), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.randint(15, 40))
+                trees.append(temp)
+            for p in points:
+                trees[r.randint(0, len(trees) - 1)].placeTree(p)
+
+            for t in trees:
+                t.hide()
         terrainItem.smooth()
+        
+        if self.GrassExist.getValue():
+            points = terrainItem.generateRandomSurfacePoints(1, 5)
+            grass = Grass()
+            grass.generateGrass(points, terrainItem.name)
         cmds.deleteUI(self.WinControl)
 
 class Tree:
@@ -256,7 +264,6 @@ class Tree:
             j += 0.1
         # print(points)
         cmds.curve(n=name, p=points, bez=1)
-        # cmds.smoothCurve(f"{name}.cv[*]", s=5)
 
     def generatePoints(self, n, density: float, height, i):
         """
@@ -391,7 +398,6 @@ class Tree:
                 + (r.uniform(self.animAmount / 2, self.animAmount)),
             )
 
-
 class Terrain:
     name = ""
     xSub = 0
@@ -437,7 +443,7 @@ class Terrain:
         """
         cmds.polySmooth(self.name, dv=4, kb=0)        #algorithm to generate points along surface
         
-    def generateRandomSurfacePoints(self, tolerance):
+    def generateRandomSurfacePoints(self, tolerance, smoothing = 1):
         """
         Generates random surface points based on the given tolerance.
 
@@ -449,15 +455,75 @@ class Terrain:
         """
         
         surfacePoints = []
-        for y in range(0, self.ySub + 1):
-            for x in range(0, self.xSub + 1):
-                v = x + (y * self.xSub)
-                if r.random() <= tolerance:
+        if tolerance == 1:
+            for y in range(0, (self.ySub + 1) * smoothing):
+                for x in range(0, (self.xSub + 1) * smoothing):
+                    v = x + (y * self.xSub)
                     pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
                     surfacePoints.append(pointPosition)
+        else:
+            for y in range(0, (self.ySub + 1) * smoothing):
+                for x in range(0, (self.xSub + 1) * smoothing):
+                    v = x + (y * self.xSub)
+                    if r.random() <= tolerance:
+                        pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
+                        surfacePoints.append(pointPosition)
 
         return surfacePoints
 
+class Grass:
 
+    def generateCurve(self, name, start, height):
+        """
+        Generate a curve with given name, start, height, and optional integer parameter.
+        
+        Parameters:
+            name (str): the name of the curve
+            start (list): the starting point of the curve
+            height (int): the height of the curve
+            i (int, optional): the optional integer parameter
+        
+        Returns:
+            None
+        """
+        points:list = [start]
+        j = 0.0
+        while j < 1:
+            points.append(
+                [
+                    points[-1][0] + (m.asin(j) / 90) * r.uniform(0, 200),
+                    start[1] + (j * height),
+                    points[-1][2] + (m.asin(j) / 90) * r.uniform(0, 200),
+                ]
+            )
+            j += 0.2
+        # print(points)
+        cmds.curve(n=name, p=points, bez=1)
+        
+    def generateGrass(self, points, parent):
+        BaseName = "ClumpMain"
+        BaseCount = 1
+        count = 200
+        for p in points:
+            if count == 200:
+                BaseName = BaseName + str(BaseCount)
+                self.generateGrassClump(BaseName, count * BaseCount)
+                BaseCount += 1
+                count = 0
+            cmds.instance(BaseName, n="Clump" + str(count), st=0)
+            cmds.move(p[0], p[1], p[2], "Clump" + str(count))
+            cmds.parent("Clump" + str(count), parent)
+            count += 1
+
+    def generateGrassClump(self, groupName, number):
+        cmds.group(n=groupName, em=1)
+        for i in range(5):
+            prName = str(number)+"GrassProfile"+str(i)
+            cmds.circle(n=prName, r=0.1, s=4)
+            cmds.xform(prName, ro=(90,0,0))
+            cmds.xform(prName+".cv[0]", t=[-1, 0, 0])
+            self.generateCurve(str(number)+"GrassCurve"+str(i), [0, 0, 0], 10)
+            cmds.extrude(prName, str(number)+"GrassCurve"+str(i), et=2, n=str(number)+"GrassMesh"+str(i),fpt=1,p=[0,0,0],sc=0.5,po=1)
+            cmds.parent(str(number)+"GrassMesh"+str(i), groupName)
 GUIItem = terrainUI()
 GUIItem.createTerrainUI()
