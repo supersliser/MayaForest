@@ -7,47 +7,108 @@ class TextInput:
     inpControl = 0
     default = ""
     def __init__(self, name, default, nullable=False):
+        """
+        Initializes the instance with the given name, default value, and nullable flag.
+
+        Parameters:
+            name (str): The name for the input control.
+            default (str): The default value for the input control.
+            nullable (bool, optional): Flag indicating if the input control can be nullable. Defaults to False.
+        """
         if not nullable:
             self.inpControl = cmds.textFieldGrp(label=name, tx=default, tcc=self.checkEmpty)
             self.default = default
         else:
             self.inpControl = cmds.textFieldGrp(label=name, tx=default)
     def checkEmpty(self, *args):
+        """
+        Check if the value is empty and update the text field if necessary.
+        
+        Parameters:
+            *args: Variable length argument list.
+        
+        Returns:
+            None
+        """
         if self.getValue() == "":
             cmds.textFieldGrp(self.inpControl, e=1, tx=self.default)
     def getValue(self):
+        """
+        Method to get the value using cmds.textFieldGrp, and return the result.
+        """
         return cmds.textFieldGrp(self.inpControl, q=1, tx=1)
-    
+
 class IntInput:
     inpControl = 0
     def __init__(self, name, minValue, maxValue, defaultValue = 0):
+        """
+        Initialize the class with the given parameters.
+
+        Args:
+            name (str): The name of the intSliderGrp.
+            minValue (int): The minimum value for the intSliderGrp.
+            maxValue (int): The maximum value for the intSliderGrp.
+            defaultValue (int, optional): The default value for the intSliderGrp. Defaults to 0.
+        """
         self.inpControl = cmds.intSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue)
     def getValue(self):
+        """
+        A function that retrieves the value of an intSliderGrp control.
+
+        Parameters:
+            self: the instance of the class
+            No explicit parameters
+
+        Returns:
+            The value of the intSliderGrp control
+        """
         return cmds.intSliderGrp(self.inpControl, q=1, v=1)
-    
+
 class FloatInput:
     inpControl = 0
     def __init__(self, name, minValue, maxValue, defaultValue = 0):
+        """
+        Initializes a new instance of the class with the specified name, minimum value, maximum value, and optional default value.
+        """
         self.inpControl = cmds.floatSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue, cw=[1, 300])
     def getValue(self):
+        """
+        A method to get the value from a float slider group control.
+        """
         return cmds.floatSliderGrp(self.inpControl, q=1, v=1)
-    
+
 class BoolInput:
     inpControl = 0
     def __init__(self, name, defaultState):
+        """
+        Initializes the class with the given name and default state.
+
+        Parameters:
+            name (str): The name for the checkbox.
+            defaultState (bool): The default state of the checkbox.
+
+        Returns:
+            None
+        """
         self.inpControl = cmds.checkBox(l=name, v=defaultState)
     def getValue(self):
+        """
+        Method to get the value using cmds.checkBox.
+        """
         return cmds.checkBox(self.inpControl, q=1, v=1)
-    
+
 class terrainUI:
     def createTerrainUI(self):
+        """
+        Create the UI for terrain generation with input fields for name, width, depth, subdivisions, tree variants, amplitude, tolerance, seed, and buttons to generate and cancel.
+        """
         self.WinControl = cmds.window(t="TerrainUI")
         cmds.columnLayout(adj=True)
         self.NameInput = TextInput("Name of terrain", "Terrain")
         self.WidthInput = IntInput("Width of terrain", 1, 2000, 150)
         self.DepthInput = IntInput("Depth of terrain", 1, 2000, 150)
-        self.XSubdivision = IntInput("Number of subdivisions on X axis", 1, 200, 5)
-        self.YSubdivision = IntInput("Number of subdivisions on Y axis", 1, 200, 5)
+        self.XSubdivision = IntInput("Number of subdivisions on X axis", 3, 200, 5)
+        self.YSubdivision = IntInput("Number of subdivisions on Y axis", 3, 200, 5)
         self.TreeVariants = IntInput("Number of different types of trees to use", 1, 10, 4)
         self.Amplitude = FloatInput("Difference between highest point and lowest point in terrain", 1, 10, 5)
         self.Tolerance = FloatInput("Percentage of vertices to generate trees", 0, 1, 0.4)
@@ -56,9 +117,21 @@ class terrainUI:
         self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
         cmds.showWindow(self.WinControl)
     def Cancel(self, *args):
+        """
+        Cancel the specified UI element.
+        
+        Parameters:
+            *args: Variable length argument list.
+        
+        Returns:
+            None
+        """
         cmds.deleteUI(self.WinControl)
         
     def GenerateTerrain(self, *args):
+        """
+        Generate terrain and place trees on the terrain.
+        """
         r.seed(self.Seed.getValue())
         terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
@@ -88,16 +161,42 @@ class Tree:
     instances = 0
     
     def placeTree(self, location):
+        """
+        Generate an instance of a tree at the specified location and rotation.
+
+        Args:
+            location (list): The x, y, z coordinates of the location.
+
+        Returns:
+            None
+        """
         newName = self.name + "_Inst" + str(self.instances)
-        print(f"Placing tree: {newName}")
         cmds.instance(self.name, n=newName, st=0)
         self.instances += 1
         cmds.move(location[0], location[1], location[2], newName)
         cmds.rotate("0deg", str(r.uniform(0, 360)) + "deg", "0deg", newName, os=1)
 
     def hide(self):
+        """
+        Hides the object by setting its visibility attribute to 0.
+        """
         cmds.setAttr(self.name + ".visibility", 0)
     def generateTree(self, density, branchStart, branchRecLevel, seed, location, terrain, height):
+        """
+        Generate a tree based on the given parameters.
+
+        Args:
+            density (float): The density of the tree.
+            branchStart (float): The starting point of the branches.
+            branchRecLevel (int): The recursion level for branching.
+            seed (int): The seed for randomization.
+            location (list): The location of the tree.
+            terrain (str): The terrain on which the tree is placed.
+            height (float): The height of the tree.
+
+        Returns:
+            None
+        """
         r.seed(seed)
         with contextlib.suppress(Exception):
             cmds.delete(self.name)
@@ -110,6 +209,19 @@ class Tree:
         cmds.parent(self.name, terrain)
         
     def __init__(self, name = "", radius = 0, leaves = False, animAmount = 0, animStart = 0, animEnd = 0, animStep = 0, genHeight = 0):
+        """
+        Initializes the attributes of the tree object.
+
+        Parameters:
+            name (str): the name of the tree
+            radius (int): the radius of the tree
+            leaves (bool): whether the tree has leaves or not
+            animAmount (int): the amount of animation
+            animStart (int): the start of the animation
+            animEnd (int): the end of the animation
+            animStep (int): the step of the animation
+            genHeight (int): the height of the tree
+        """
         self.name = name
         self.radius = radius
         self.leaves = leaves
@@ -119,6 +231,18 @@ class Tree:
         self.animStep = animStep
         self.genHeight = genHeight
     def generateCurve(self, name, start, height, i: int = 1):
+        """
+        Generate a curve with given name, start, height, and optional integer parameter.
+        
+        Parameters:
+            name (str): the name of the curve
+            start (list): the starting point of the curve
+            height (int): the height of the curve
+            i (int, optional): the optional integer parameter
+        
+        Returns:
+            None
+        """
         points:list = [start]
         j = 0.0
         while j < 1:
@@ -135,6 +259,15 @@ class Tree:
         # cmds.smoothCurve(f"{name}.cv[*]", s=5)
 
     def generatePoints(self, n, density: float, height, i):
+        """
+        Generate points along a curve based on the given parameters and return a list of items.
+        
+        :param n: integer
+        :param density: float
+        :param height: float
+        :param i: integer
+        :return: list
+        """
         items = []
         for _ in range(m.floor(density * 100)):
             temp = r.uniform(height, 1)
@@ -142,6 +275,19 @@ class Tree:
         return items
 
     def sweepCurve(self, name, point, radius, i):
+        """
+        This function sweeps a circle along a predefined curve.
+
+        Args:
+            self: the instance of the class
+            name (str): the name of the curve
+            point (tuple): the position of the curve
+            radius (float): the radius of the curve
+            i: an integer parameter
+
+        Returns:
+            None
+        """
         cmds.circle(n=f"{name}_profile", r=radius)
         cmds.xform(f"{name}_profile", t=point)
         cmds.parent(f"{name}_profile", name)
@@ -153,6 +299,19 @@ class Tree:
         cmds.hyperShade(f"{name}_mesh", a="BarkMat")
 
     def createBranch(self, i, dec, branch, den, height):
+        """
+        Function to create branches with given parameters.
+
+        Args:
+            i: int, parameter for height calculation
+            dec: float, parameter for height calculation
+            branch: str, name of the branch
+            den: float, parameter for generating points
+            height: float, height of the branch
+
+        Returns:
+            None
+        """
         height *= i
         num = 0
         points = self.generatePoints(branch, den, self.genHeight, i + dec)
@@ -193,9 +352,19 @@ class Tree:
                     newIName,
                     os=1
                 )
-                num += 1            
+                num += 1
 
     def createAnim(self, name, itemRotation):
+        """
+        Create an animation for the given name with the specified itemRotation.
+        
+        Parameters:
+            name (str): the name of the animation
+            itemRotation (list): a list containing the rotation values for X, Y, and Z axes
+            
+        Returns:
+            None
+        """
         for i in range(m.floor(self.animStart), m.floor(self.animStop), m.floor(self.animStep * 2)):
             cmds.setKeyframe(name, at="rotateX", time=i, v=itemRotation[0])
             cmds.setKeyframe(name, at="rotateY", time=i, v=itemRotation[1])
@@ -221,22 +390,36 @@ class Tree:
                 v=itemRotation[2]
                 + (r.uniform(self.animAmount / 2, self.animAmount)),
             )
-            
-            
+
+
 class Terrain:
     name = ""
     xSub = 0
     ySub = 0
     
     def __init__(self, name, xSub, ySub):
+        """
+        Initialize the object with the given name, xSub, and ySub.
+        
+        Parameters:
+            name (str): The name of the object.
+            xSub (int): The xSub value.
+            ySub (int): The ySub value.
+        """
         self.name = name
         self.xSub = xSub
         self.ySub = ySub
     
-    def generateTerrain(self, xSize, ySize, a):
-        
+    def generateTerrain(self, xSize, ySize, a):        
+        """
+            Generate terrain based on the provided xSize, ySize, and a parameters.
+    
+            :param xSize: the size of the terrain in the x direction
+            :param ySize: the size of the terrain in the y direction
+            :param a: parameter controlling the terrain generation
+        """
         try:
-            cmds.delete(self.name, hr=1)
+            cmds.delete(self.name)
         except:  # noqa: E722
             pass
         cmds.polyPlane(n=self.name, w=xSize, h=ySize, sx=self.xSub, sy=self.ySub)
@@ -249,29 +432,32 @@ class Terrain:
         cmds.hyperShade(self.name, a="MudMat")
 
     def smooth(self):
+        """
+        A method to apply smoothing to the surface using the polySmooth function.
+        """
         cmds.polySmooth(self.name, dv=4, kb=0)        #algorithm to generate points along surface
         
     def generateRandomSurfacePoints(self, tolerance):
         """
-        This function generates a list of points randomly placed on a polyPlane surface
-        based on a given probability tolerance.
+        Generates random surface points based on the given tolerance.
 
-        Args:
-        tolerance (float): The probability threshold for placing a point.
+        Parameters:
+            tolerance (float): The tolerance level for generating random surface points.
 
         Returns:
-        list: A list of point coordinates on the surface.
+            list: A list of randomly generated surface points.
         """
+        
         surfacePoints = []
-        for y in range(self.ySub + 1):
-            for x in range(self.xSub + 1):
+        for y in range(0, self.ySub + 1):
+            for x in range(0, self.xSub + 1):
                 v = x + (y * self.xSub)
                 if r.random() <= tolerance:
                     pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
                     surfacePoints.append(pointPosition)
 
         return surfacePoints
-    
-    
+
+
 GUIItem = terrainUI()
 GUIItem.createTerrainUI()
