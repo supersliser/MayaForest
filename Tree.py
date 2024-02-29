@@ -149,10 +149,10 @@ class terrainUI:
 
             for t in trees:
                 t.hide()
-        terrainItem.smooth()
+        terrainItem.smooth(4)
         
         if self.GrassExist.getValue():
-            points = terrainItem.generateRandomSurfacePoints(1, 5)
+            points = terrainItem.generateRandomSurfacePoints(1, 4^4)
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
         cmds.deleteUI(self.WinControl)
@@ -437,11 +437,11 @@ class Terrain:
                 cmds.polyMoveVertex(self.name+".vtx[" + str(v) + "]", ty=(r.random() * a * 2) - a)
         cmds.hyperShade(self.name, a="MudMat")
 
-    def smooth(self):
+    def smooth(self, amount):
         """
         A method to apply smoothing to the surface using the polySmooth function.
         """
-        cmds.polySmooth(self.name, dv=4, kb=0)        #algorithm to generate points along surface
+        cmds.polySmooth(self.name, dv=amount, kb=0)        #algorithm to generate points along surface
         
     def generateRandomSurfacePoints(self, tolerance, smoothing = 1):
         """
@@ -506,24 +506,24 @@ class Grass:
         count = 200
         for p in points:
             if count == 200:
-                BaseName = BaseName + str(BaseCount)
+                BaseName = BaseName[:-2] + str(BaseCount)
                 self.generateGrassClump(BaseName, count * BaseCount)
                 BaseCount += 1
                 count = 0
-            cmds.instance(BaseName, n="Clump" + str(count), st=0)
-            cmds.move(p[0], p[1], p[2], "Clump" + str(count))
-            cmds.parent("Clump" + str(count), parent)
+            cmds.instance(BaseName, n="Clump_"+str(BaseCount)+ "_" + str(count), st=0)
+            cmds.move(p[0], p[1], p[2], "Clump_"+str(BaseCount)+ "_" + str(count))
+            cmds.parent("Clump_"+str(BaseCount)+ "_" + str(count), parent)
             count += 1
 
     def generateGrassClump(self, groupName, number):
         cmds.group(n=groupName, em=1)
         for i in range(5):
-            prName = str(number)+"GrassProfile"+str(i)
+            prName = "GrassProfile_"+str(number)+"_"+str(i)
             cmds.circle(n=prName, r=0.1, s=4)
             cmds.xform(prName, ro=(90,0,0))
             cmds.xform(prName+".cv[0]", t=[-1, 0, 0])
-            self.generateCurve(str(number)+"GrassCurve"+str(i), [0, 0, 0], 10)
-            cmds.extrude(prName, str(number)+"GrassCurve"+str(i), et=2, n=str(number)+"GrassMesh"+str(i),fpt=1,p=[0,0,0],sc=0.5,po=1)
-            cmds.parent(str(number)+"GrassMesh"+str(i), groupName)
+            self.generateCurve("GrassCurve_"+str(number)+"_"+str(i), [0, 0, 0], 10)
+            cmds.extrude(prName, "GrassCurve_"+str(number)+"_"+str(i), et=2, n="GrassMesh_"+str(number)+"_"+str(i),fpt=1,p=[0,0,0],sc=0.5,po=1)
+            cmds.parent("GrassMesh_"+str(number)+"_"+str(i), groupName)
 GUIItem = terrainUI()
 GUIItem.createTerrainUI()
