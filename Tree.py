@@ -107,8 +107,8 @@ class terrainUI:
         self.NameInput = TextInput("Name of terrain", "Terrain")
         self.WidthInput = IntInput("Width of terrain", 1, 2000, 150)
         self.DepthInput = IntInput("Depth of terrain", 1, 2000, 150)
-        self.XSubdivision = IntInput("Number of subdivisions on X axis", 3, 200, 5)
-        self.YSubdivision = IntInput("Number of subdivisions on Y axis", 3, 200, 5)
+        self.XSubdivision = IntInput("subdivisions on X axis", 3, 200, 5)
+        self.YSubdivision = IntInput("subdivisions on Y axis", 3, 200, 5)
         self.TreesExist = BoolInput("Generate Trees", True)
         self.GrassExist = BoolInput("Generate Grass", True)
         self.TreeVariants = IntInput("Number of different types of trees to use", 1, 10, 4)
@@ -523,9 +523,9 @@ class Grass:
             None
         """
         cmds.group(n=groupName, em=1)
-        cmds.circle(n="GrassClumpAxis_"+str(number), r=0.1, s=5)
-        cmds.xform("GrassClumpAxis_"+str(number), ro=(90,0,0))
-        points = cmds.xform("GrassClumpAxis_"+str(number)+".cv[*]", q=1, ws=1, t=1)
+        # cmds.circle(n="GrassClumpAxis_"+str(number), r=0.1, s=5)
+        # cmds.xform("GrassClumpAxis_"+str(number), ro=(90,0,0))
+        # points = cmds.xform("GrassClumpAxis_"+str(number)+".cv[*]", q=1, ws=1, t=1)
         for i in range(5):
             prName = "GrassProfile_"+str(number)+"_"+str(i)
             cmds.circle(n=prName, r=0.1, s=4)
@@ -534,7 +534,8 @@ class Grass:
             self.generateCurve("GrassCurve_"+str(number)+"_"+str(i), [0, 0, 0], 10)
             cmds.extrude(prName, "GrassCurve_"+str(number)+"_"+str(i), et=2, n="GrassMesh_"+str(number)+"_"+str(i),fpt=1,p=[0,0,0],sc=0.5,po=1)
             cmds.parent("GrassMesh_"+str(number)+"_"+str(i), groupName)
-            cmds.xform("GrassMesh_"+str(number)+"_"+str(i), t=points[i])
+            cmds.hyperShade("GrassMesh_"+str(number)+"_"+str(i), a="GrassMat")
+            # cmds.xform("GrassMesh_"+str(number)+"_"+str(i), t=points[i])
 
 
 cmds.scriptEditorInfo(sw=1)
