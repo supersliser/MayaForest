@@ -1,4 +1,5 @@
 import contextlib
+from posixpath import basename
 import maya.cmds as cmds
 import random as r
 import math as m
@@ -138,7 +139,7 @@ class terrainUI:
         terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
         if self.TreesExist.getValue():
-            points = terrainItem.generateRandomSurfacePoints(self.Tolerance.getValue())
+            points = terrainItem.generate_random_points_on_non_flat_plane(terrainItem.name, m.floor(self.Tolerance.getValue() * self.WidthInput.getValue() * self.DepthInput.getValue()))
             trees = []
             for t in range(self.TreeVariants.getValue()):
                 temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), 50, 0, 250, 50, 0.7)
@@ -151,7 +152,7 @@ class terrainUI:
                 t.hide()
         terrainItem.smooth(4)
         if self.GrassExist.getValue():
-            points = terrainItem.generateRandomSurfacePoints(1, 4**4)
+            points = terrainItem.generateRandomSurfacePoints(1, 4**1)
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
         cmds.deleteUI(self.WinControl)
@@ -423,8 +424,17 @@ class Terrain:
         """
         A method to apply smoothing to the surface using the polySmooth function.
         """
-        cmds.polySmooth(self.name, dv=amount, kb=0)        #algorithm to generate points along surface
+        cmds.polySmooth(self.name, dv=amount, kb=0)
         
+    def generate_random_points_on_non_flat_plane(plane, num_points):
+        points = []
+        for _ in range(num_points):
+            u = r.uniform(0, 1)
+            v = r.uniform(0, 1)
+            point_position = cmds.pointOnSurface(plane, u=u, v=v, position=True, q=1)
+            points.append(point_position)
+        return points
+    
     def generateRandomSurfacePoints(self, tolerance, smoothing = 1):
         """
         Generates random surface points based on the given tolerance.
@@ -435,7 +445,7 @@ class Terrain:
         Returns:
             list: A list of randomly generated surface points.
         """
-        
+
         surfacePoints = []
         if tolerance == 1:
             for y in range(0, (self.ySub + 1) * smoothing):
@@ -450,7 +460,6 @@ class Terrain:
                     if r.random() <= tolerance:
                         pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
                         surfacePoints.append(pointPosition)
-
         return surfacePoints
 
 class Grass:
@@ -493,17 +502,17 @@ class Grass:
         Returns:
             None
         """
-        BaseName = "ClumpMain"
         BaseCount = 1
-        count:int = 200
+        count:int = 50
+        BaseName = "GrassClumpAxis_"+str(BaseCount)
         for p in points:
-            if count == 200:
+            if count == 50:
                 try:
                     cmds.delete(BaseName)
                 except:
                     pass
-                BaseName = BaseName[:-2] + str(BaseCount)
-                self.generateGrassClump(BaseName, count * BaseCount)
+                BaseName = "GrassClumpAxis_"+str(BaseCount)
+                self.generateGrassClump(BaseCount, count * BaseCount)
                 BaseCount += 1
                 count = 0
             cmds.instance(BaseName, n="Clump_"+str(BaseCount)+ "_" + str(count), st=0)
@@ -511,7 +520,7 @@ class Grass:
             cmds.parent("Clump_"+str(BaseCount)+ "_" + str(count), parent)
             count += 1
 
-    def generateGrassClump(self, groupName, number):
+    def generateGrassClump(self, gpNum, number):
         """
         Generates a grass clump group and its associated curves and meshes.
 
@@ -522,20 +531,25 @@ class Grass:
         Returns:
             None
         """
-        cmds.group(n=groupName, em=1)
-        # cmds.circle(n="GrassClumpAxis_"+str(number), r=0.1, s=5)
-        # cmds.xform("GrassClumpAxis_"+str(number), ro=(90,0,0))
-        # points = cmds.xform("GrassClumpAxis_"+str(number)+".cv[*]", q=1, ws=1, t=1)
+        groupName = "GrassClumpAxis_"+str(gpNum)
+        cmds.circle(n=groupName, r=0.1, s=5)
+        cmds.xform(groupName, ro=(90,0,0))
+        points = []
         for i in range(5):
             prName = "GrassProfile_"+str(number)+"_"+str(i)
+            points.append(cmds.xform(groupName+".cv["+str(i)+"]", q=1, t=1,))
             cmds.circle(n=prName, r=0.1, s=4)
+            cmds.parent(prName, groupName)
             cmds.xform(prName, ro=(90,0,0))
             cmds.xform(prName+".cv[0]", t=[-1, 0, 0])
-            self.generateCurve("GrassCurve_"+str(number)+"_"+str(i), [0, 0, 0], 10)
-            cmds.extrude(prName, "GrassCurve_"+str(number)+"_"+str(i), et=2, n="GrassMesh_"+str(number)+"_"+str(i),fpt=1,p=[0,0,0],sc=0.5,po=1)
-            cmds.parent("GrassMesh_"+str(number)+"_"+str(i), groupName)
-            cmds.hyperShade("GrassMesh_"+str(number)+"_"+str(i), a="GrassMat")
-            # cmds.xform("GrassMesh_"+str(number)+"_"+str(i), t=points[i])
+            ptName = "GrassCurve_"+str(number)+"_"+str(i)
+            mName = "GrassMesh_"+str(number)+"_"+str(i)
+            self.generateCurve(ptName, [0, 0, 0], 10)
+            cmds.parent(ptName, groupName)
+            cmds.extrude(prName, ptName, et=2, n=mName,fpt=1,p=[0,0,0],sc=0.5,po=0)
+            cmds.parent(mName, groupName)
+            cmds.hyperShade(mName, a="GrassMat")
+            cmds.xform("GrassMesh_"+str(number)+"_"+str(i), t=points[i])
 
 
 cmds.scriptEditorInfo(sw=1)
