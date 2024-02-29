@@ -141,7 +141,7 @@ class terrainUI:
             points = terrainItem.generateRandomSurfacePoints(self.Tolerance.getValue())
             trees = []
             for t in range(self.TreeVariants.getValue()):
-                temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), True, 50, 0, 250, 50, 0.7)
+                temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), 50, 0, 250, 50, 0.7)
                 temp.generateTree(r.uniform(0.15, 0.25), 1, r.randint(2, 3), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.randint(15, 40))
                 trees.append(temp)
             for p in points:
@@ -215,7 +215,7 @@ class Tree:
         cmds.xform(self.name, ro=("0deg", str(r.uniform(0, 360)) + "deg", "0deg"), rp=(0, 0, 0), os=1)
         cmds.parent(self.name, terrain)
         
-    def __init__(self, name = "", radius = 0, leaves = False, animAmount = 0, animStart = 0, animEnd = 0, animStep = 0, genHeight = 0):
+    def __init__(self, name = "", radius = 0, animAmount = 0, animStart = 0, animEnd = 0, animStep = 0, genHeight = 0):
         """
         Initializes the attributes of the tree object.
 
@@ -231,7 +231,6 @@ class Tree:
         """
         self.name = name
         self.radius = radius
-        self.leaves = leaves
         self.animAmount = animAmount
         self.animStart = animStart
         self.animStop = animEnd
@@ -332,7 +331,7 @@ class Tree:
                 self.createAnim(newName,cmds.xform(newName, q=1, ro=1))
                 self.sweepCurve(newName, point[0], self.radius * 0.5 * point[1], i)
                 num+= 1
-        elif branch != self.name and self.leaves:
+        elif branch != self.name:
             newName = f"{branch}_Leaf{str(num)}"
             cmds.duplicate("Leaf1", n=newName)
             cmds.parent(newName, branch)
@@ -398,19 +397,7 @@ class Tree:
             )
 
 class Terrain:
-    name = ""
-    xSub = 0
-    ySub = 0
-    
     def __init__(self, name, xSub, ySub):
-        """
-        Initialize the object with the given name, xSub, and ySub.
-        
-        Parameters:
-            name (str): The name of the object.
-            xSub (int): The xSub value.
-            ySub (int): The ySub value.
-        """
         self.name = name
         self.xSub = xSub
         self.ySub = ySub
@@ -423,15 +410,11 @@ class Terrain:
             :param ySize: the size of the terrain in the y direction
             :param a: parameter controlling the terrain generation
         """
-        try:
-            cmds.delete(self.name)
-        except:  # noqa: E722
-            pass
         cmds.polyPlane(n=self.name, w=xSize, h=ySize, sx=self.xSub, sy=self.ySub)
         cmds.setAttr(self.name+".rotate", 0, 90, 0, type="double3")
 
-        for y in range(0, self.ySub):
-            for x in range(0, self.xSub):
+        for y in range(0, self.ySub + 1):
+            for x in range(0, self.xSub + 1):
                 v = x + (y * self.xSub)
                 cmds.polyMoveVertex(self.name+".vtx[" + str(v) + "]", ty=(r.random() * a * 2) - a)
         cmds.hyperShade(self.name, a="MudMat")
@@ -500,6 +483,16 @@ class Grass:
         cmds.curve(n=name, p=points, bez=1)
         
     def generateGrass(self, points, parent):
+        """
+        Generate grass based on the given points and parent object.
+
+        Args:
+            points: The points to generate the grass on.
+            parent: The parent object for the generated grass.
+
+        Returns:
+            None
+        """
         BaseName = "ClumpMain"
         BaseCount = 1
         count:int = 200
@@ -519,6 +512,16 @@ class Grass:
             count += 1
 
     def generateGrassClump(self, groupName, number):
+        """
+        Generates a grass clump group and its associated curves and meshes.
+
+        Args:
+            groupName (str): The name of the group to create.
+            number (int): The number associated with the grass clump.
+
+        Returns:
+            None
+        """
         cmds.group(n=groupName, em=1)
         for i in range(5):
             prName = "GrassProfile_"+str(number)+"_"+str(i)
