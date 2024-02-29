@@ -151,7 +151,7 @@ class terrainUI:
                 t.hide()
         terrainItem.smooth(4)
         if self.GrassExist.getValue():
-            points = terrainItem.generateRandomSurfacePoints(1, 4**5)
+            points = terrainItem.generateRandomSurfacePoints(1, 4**4)
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
         cmds.deleteUI(self.WinControl)
@@ -507,7 +507,7 @@ class Grass:
                 BaseCount += 1
                 count = 0
             cmds.instance(BaseName, n="Clump_"+str(BaseCount)+ "_" + str(count), st=0)
-            cmds.move(p[0], p[1], p[2], "Clump_"+str(BaseCount)+ "_" + str(count))
+            cmds.move(p[0] + r.uniform(-1, 1), p[1], p[2] + r.uniform(-1, 1), "Clump_"+str(BaseCount)+ "_" + str(count))
             cmds.parent("Clump_"+str(BaseCount)+ "_" + str(count), parent)
             count += 1
 
@@ -523,6 +523,9 @@ class Grass:
             None
         """
         cmds.group(n=groupName, em=1)
+        cmds.circle(n="GrassClumpAxis_"+str(number), r=0.1, s=5)
+        cmds.xform("GrassClumpAxis_"+str(number), ro=(90,0,0))
+        points = cmds.xform("GrassClumpAxis_"+str(number)+".cv[*]", q=1, ws=1, t=1)
         for i in range(5):
             prName = "GrassProfile_"+str(number)+"_"+str(i)
             cmds.circle(n=prName, r=0.1, s=4)
@@ -531,5 +534,9 @@ class Grass:
             self.generateCurve("GrassCurve_"+str(number)+"_"+str(i), [0, 0, 0], 10)
             cmds.extrude(prName, "GrassCurve_"+str(number)+"_"+str(i), et=2, n="GrassMesh_"+str(number)+"_"+str(i),fpt=1,p=[0,0,0],sc=0.5,po=1)
             cmds.parent("GrassMesh_"+str(number)+"_"+str(i), groupName)
+            cmds.xform("GrassMesh_"+str(number)+"_"+str(i), t=points[i])
+
+
+cmds.scriptEditorInfo(sw=1)
 GUIItem = terrainUI()
 GUIItem.createTerrainUI()
