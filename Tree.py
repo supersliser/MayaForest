@@ -150,9 +150,8 @@ class terrainUI:
             for t in trees:
                 t.hide()
         terrainItem.smooth(4)
-        
         if self.GrassExist.getValue():
-            points = terrainItem.generateRandomSurfacePoints(1, 4^4)
+            points = terrainItem.generateRandomSurfacePoints(1, 4**5)
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
         cmds.deleteUI(self.WinControl)
@@ -457,7 +456,7 @@ class Terrain:
         surfacePoints = []
         if tolerance == 1:
             for y in range(0, (self.ySub + 1) * smoothing):
-                for x in range(0, (self.xSub + 1) * smoothing):
+                for x in range(0, m.floor((self.xSub + 1) * smoothing)):
                     v = x + (y * self.xSub)
                     pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
                     surfacePoints.append(pointPosition)
@@ -503,9 +502,13 @@ class Grass:
     def generateGrass(self, points, parent):
         BaseName = "ClumpMain"
         BaseCount = 1
-        count = 200
+        count:int = 200
         for p in points:
             if count == 200:
+                try:
+                    cmds.delete(BaseName)
+                except:
+                    pass
                 BaseName = BaseName[:-2] + str(BaseCount)
                 self.generateGrassClump(BaseName, count * BaseCount)
                 BaseCount += 1
