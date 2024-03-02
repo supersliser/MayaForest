@@ -151,9 +151,9 @@ class terrainUI:
 
             for t in trees:
                 t.hide()
-        terrainItem.smooth(4)
+        terrainItem.smooth(2)
         if self.GrassExist.getValue():
-            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=1 * self.WidthInput.getValue() * self.DepthInput.getValue())
+            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor(self.Tolerance.getValue() * self.WidthInput.getValue() * self.DepthInput.getValue()))
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
         cmds.deleteUI(self.WinControl)
@@ -412,30 +412,30 @@ class Terrain:
             :param ySize: the size of the terrain in the y direction
             :param a: parameter controlling the terrain generation
         """
-        cmds.polyPlane(n=self.name, w=xSize, h=ySize, sx=self.xSub, sy=self.ySub)
-        cmds.setAttr(self.name+".rotate", 0, 90, 0, type="double3")
+        # cmds.polyPlane(n=self.name, w=xSize, h=ySize, sx=self.xSub, sy=self.ySub)
+        cmds.nurbsPlane(n=self.name, w=xSize, lr=ySize / xSize, u=self.xSub, v=self.ySub)
+        cmds.setAttr(self.name+".rotate", 0, 0, 90, type="double3")
 
         for y in range(0, self.ySub + 1):
             for x in range(0, self.xSub + 1):
                 v = x + (y * self.xSub)
-                cmds.polyMoveVertex(self.name+".vtx[" + str(v) + "]", ty=(r.random() * a * 2) - a)
+                cmds.move(0, (r.random() * a * 2) - a, 0, self.name+".cv[" + str(v) + "]", r=1)
+                # cmds.polyMoveVertex(self.name+".vtx[" + str(v) + "]", ty=(r.random() * a * 2) - a)
         cmds.hyperShade(self.name, a="MudMat")
 
     def smooth(self, amount):
         """
         A method to apply smoothing to the surface using the polySmooth function.
         """
-        cmds.polySmooth(self.name, dv=amount, kb=0)
+        # cmds.polySmooth(self.name, dv=amount, kb=0)
+        cmds.rebuildSurface(self.name, rt=0, dir=2, su=self.xSub ** amount, sv=self.ySub ** amount)
         
     def generate_random_points_on_non_flat_plane(self, plane:string, num_points: int):
         points = []
         for _ in range(num_points):
             u = r.uniform(0, 1)
             v = r.uniform(0, 1)
-            print(plane)
-            cmds.select(cl=1)
-            cmds.select(plane)
-            point_position = cmds.pointOnSurface(u=u, v=v, position=True, q=1)
+            point_position = cmds.pointOnSurface(plane, u=u, v=v, p=True)
             points.append(point_position)
         return points
     
