@@ -115,7 +115,8 @@ class terrainUI:
         self.GrassExist = BoolInput("Generate Grass", True)
         self.TreeVariants = IntInput("Number of different types of trees to use", 1, 10, 4)
         self.Amplitude = FloatInput("Difference between highest point and lowest point in terrain", 1, 10, 5)
-        self.Tolerance = FloatInput("Percentage of vertices to generate trees", 0, 1, 0.4)
+        self.TreeDensity = FloatInput("Percentage of space to generate trees", 0, 1, 0.4)
+        self.GrassDensity = FloatInput("Percentage of space to generate grass", 0, 1, 0.7)
         self.Seed = IntInput("Randomness seed", 1, 9999999, 1)
         self.GenerateButton = cmds.button(l="Generate Terrain", c=self.GenerateTerrain)
         self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
@@ -140,7 +141,7 @@ class terrainUI:
         terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
         if self.TreesExist.getValue():
-            points = terrainItem.generate_random_points_on_non_flat_plane(terrainItem.name, m.floor(self.Tolerance.getValue() * self.WidthInput.getValue() * self.DepthInput.getValue()))
+            points = terrainItem.generate_random_points_on_non_flat_plane(terrainItem.name, m.floor((self.TreeDensity.getValue() / 100) * self.WidthInput.getValue() * self.DepthInput.getValue()))
             trees = []
             for t in range(self.TreeVariants.getValue()):
                 temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), 50, 0, 250, 50, 0.7)
@@ -153,7 +154,7 @@ class terrainUI:
                 t.hide()
         terrainItem.smooth(2)
         if self.GrassExist.getValue():
-            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor(self.Tolerance.getValue() * self.WidthInput.getValue() * self.DepthInput.getValue()))
+            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor((self.GrassDensity.getValue() / 10) * self.WidthInput.getValue() * self.DepthInput.getValue()))
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
         cmds.deleteUI(self.WinControl)
@@ -419,7 +420,7 @@ class Terrain:
         for y in range(0, self.ySub + 1):
             for x in range(0, self.xSub + 1):
                 v = x + (y * self.xSub)
-                cmds.move(0, (r.random() * a * 2) - a, 0, self.name+".cv[" + str(v) + "]", r=1)
+                cmds.move(0, r.uniform(-a, a), 0, self.name+".cv[" + str(v) + "]", r=1)
                 # cmds.polyMoveVertex(self.name+".vtx[" + str(v) + "]", ty=(r.random() * a * 2) - a)
         cmds.hyperShade(self.name, a="MudMat")
 
@@ -512,7 +513,7 @@ class Grass:
         for p in points:
             if count == 50:
                 try:
-                    cmds.delete(BaseName)
+                    cmds.hide(BaseName)
                 except:
                     pass
                 BaseName = "GrassClumpAxis_"+str(BaseCount)
@@ -523,6 +524,7 @@ class Grass:
             cmds.move(p[0] + r.uniform(-1, 1), p[1], p[2] + r.uniform(-1, 1), "Clump_"+str(BaseCount)+ "_" + str(count))
             cmds.parent("Clump_"+str(BaseCount)+ "_" + str(count), parent)
             count += 1
+        cmds.hide(BaseName)
 
     def generateGrassClump(self, gpNum, number):
         """
