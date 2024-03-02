@@ -141,7 +141,7 @@ class terrainUI:
         terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
         if self.TreesExist.getValue():
-            points = terrainItem.generate_random_points_on_non_flat_plane(terrainItem.name, m.floor((self.TreeDensity.getValue() / 100) * self.WidthInput.getValue() * self.DepthInput.getValue()))
+            points = terrainItem.generate_random_points_on_non_flat_plane(terrainItem.name, m.floor((self.TreeDensity.getValue() / 1000) * self.WidthInput.getValue() * self.DepthInput.getValue()))
             trees = []
             for t in range(self.TreeVariants.getValue()):
                 temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), 50, 0, 250, 50, 0.7)
@@ -154,7 +154,7 @@ class terrainUI:
                 t.hide()
         terrainItem.smooth(2)
         if self.GrassExist.getValue():
-            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor((self.GrassDensity.getValue() / 10) * self.WidthInput.getValue() * self.DepthInput.getValue()))
+            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor((self.GrassDensity.getValue() / 100) * self.WidthInput.getValue() * self.DepthInput.getValue()))
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
         cmds.deleteUI(self.WinControl)
@@ -185,6 +185,7 @@ class Tree:
         self.instances += 1
         cmds.move(location[0], location[1], location[2], newName)
         cmds.rotate("0deg", str(r.uniform(0, 360)) + "deg", "0deg", newName, os=1)
+        cmds.rotate("0deg", "0deg", "-90deg", newName, os=1)
 
     def hide(self):
         """
@@ -215,7 +216,6 @@ class Tree:
         self.createBranch(branchStart, branchStart / branchRecLevel, self.name, density / 2, height)
         cmds.xform(self.name, t=(location[0], location[1] - 1, location[2]))
         cmds.playbackOptions(minTime=self.animStart, maxTime=self.animStop, l="continuous")
-        cmds.xform(self.name, ro=("0deg", str(r.uniform(0, 360)) + "deg", "0deg"), rp=(0, 0, 0), os=1)
         cmds.parent(self.name, terrain)
         
     def __init__(self, name = "", radius = 0, animAmount = 0, animStart = 0, animEnd = 0, animStep = 0, genHeight = 0):
@@ -487,9 +487,9 @@ class Grass:
         while j < 1:
             points.append(
                 [
-                    points[-1][0] + (m.asin(j) / 90) * r.uniform(0, 200),
+                    points[-1][0] + (m.asin(j) / 90) * r.uniform(0, 2000),
                     start[1] + (j * height),
-                    points[-1][2] + (m.asin(j) / 90) * r.uniform(0, 200),
+                    points[-1][2] + (m.asin(j) / 90) * r.uniform(0, 2000),
                 ]
             )
             j += 0.2
