@@ -1,5 +1,6 @@
 import contextlib
 from posixpath import basename
+import string
 import maya.cmds as cmds
 import random as r
 import math as m
@@ -152,7 +153,7 @@ class terrainUI:
                 t.hide()
         terrainItem.smooth(4)
         if self.GrassExist.getValue():
-            points = terrainItem.generateRandomSurfacePoints(1, 4**1)
+            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=1 * self.WidthInput.getValue() * self.DepthInput.getValue())
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
         cmds.deleteUI(self.WinControl)
@@ -426,41 +427,44 @@ class Terrain:
         """
         cmds.polySmooth(self.name, dv=amount, kb=0)
         
-    def generate_random_points_on_non_flat_plane(plane, num_points):
+    def generate_random_points_on_non_flat_plane(self, plane:string, num_points: int):
         points = []
         for _ in range(num_points):
             u = r.uniform(0, 1)
             v = r.uniform(0, 1)
-            point_position = cmds.pointOnSurface(plane, u=u, v=v, position=True, q=1)
+            print(plane)
+            cmds.select(cl=1)
+            cmds.select(plane)
+            point_position = cmds.pointOnSurface(u=u, v=v, position=True, q=1)
             points.append(point_position)
         return points
     
-    def generateRandomSurfacePoints(self, tolerance, smoothing = 1):
-        """
-        Generates random surface points based on the given tolerance.
+    # def generateRandomSurfacePoints(self, tolerance, smoothing = 1):
+    #     """
+    #     Generates random surface points based on the given tolerance.
 
-        Parameters:
-            tolerance (float): The tolerance level for generating random surface points.
+    #     Parameters:
+    #         tolerance (float): The tolerance level for generating random surface points.
 
-        Returns:
-            list: A list of randomly generated surface points.
-        """
+    #     Returns:
+    #         list: A list of randomly generated surface points.
+    #     """
 
-        surfacePoints = []
-        if tolerance == 1:
-            for y in range(0, (self.ySub + 1) * smoothing):
-                for x in range(0, m.floor((self.xSub + 1) * smoothing)):
-                    v = x + (y * self.xSub)
-                    pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
-                    surfacePoints.append(pointPosition)
-        else:
-            for y in range(0, (self.ySub + 1) * smoothing):
-                for x in range(0, (self.xSub + 1) * smoothing):
-                    v = x + (y * self.xSub)
-                    if r.random() <= tolerance:
-                        pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
-                        surfacePoints.append(pointPosition)
-        return surfacePoints
+    #     surfacePoints = []
+    #     if tolerance == 1:
+    #         for y in range(0, (self.ySub + 1) * smoothing):
+    #             for x in range(0, m.floor((self.xSub + 1) * smoothing)):
+    #                 v = x + (y * self.xSub)
+    #                 pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
+    #                 surfacePoints.append(pointPosition)
+    #     else:
+    #         for y in range(0, (self.ySub + 1) * smoothing):
+    #             for x in range(0, (self.xSub + 1) * smoothing):
+    #                 v = x + (y * self.xSub)
+    #                 if r.random() <= tolerance:
+    #                     pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
+    #                     surfacePoints.append(pointPosition)
+    #     return surfacePoints
 
 class Grass:
 
