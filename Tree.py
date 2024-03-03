@@ -429,6 +429,7 @@ class Terrain:
             u = r.uniform(0, 1)
             v = r.uniform(0, 1)
             point_position = cmds.pointOnSurface(plane, u=u, v=v, p=True)
+            print(point_position)
             points.append(point_position)
         return points
     
