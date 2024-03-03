@@ -152,24 +152,15 @@ class terrainUI:
 
             for t in trees:
                 t.hide()
-        terrainItem.smooth(2)
         if self.GrassExist.getValue():
-            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor((self.GrassDensity.getValue() / 100) * self.WidthInput.getValue() * self.DepthInput.getValue()))
+            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor((self.GrassDensity.getValue() / 10) * self.WidthInput.getValue() * self.DepthInput.getValue()))
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
+        terrainItem.smooth(2)
         cmds.deleteUI(self.WinControl)
 
 class Tree:
-    name = ""
-    radius = 0
-    leaves = False
-    animAmount = 0
-    animStart = 0
-    animStop = 0
-    animStep = 0
-    genHeight = 0
     instances = 0
-    
     def placeTree(self, location):
         """
         Generate an instance of a tree at the specified location and rotation.
@@ -181,6 +172,7 @@ class Tree:
             None
         """
         newName = self.name + "_Inst" + str(self.instances)
+        print("Placing tree: " + newName)
         cmds.instance(self.name, n=newName, st=0)
         self.instances += 1
         cmds.move(location[0], location[1], location[2], newName)
@@ -487,9 +479,9 @@ class Grass:
         while j < 1:
             points.append(
                 [
-                    points[-1][0] + (m.asin(j) / 90) * r.uniform(0, 2000),
+                    points[-1][0] + (m.asin(j) / 90) * r.uniform(0, 200),
                     start[1] + (j * height),
-                    points[-1][2] + (m.asin(j) / 90) * r.uniform(0, 2000),
+                    points[-1][2] + (m.asin(j) / 90) * r.uniform(0, 200),
                 ]
             )
             j += 0.2
@@ -509,19 +501,23 @@ class Grass:
         """
         BaseCount = 1
         count:int = 50
-        BaseName = "GrassClumpAxis_"+str(BaseCount)
+        BaseName = "GrassTrueClump"
+        self.generateGrassClump(BaseCount, count * BaseCount)
+        ClumpName = "GrassClumpAxis_"+str(BaseCount)
         for p in points:
             if count == 50:
                 try:
-                    cmds.hide(BaseName)
+                    cmds.hide(ClumpName)
                 except:
                     pass
-                BaseName = "GrassClumpAxis_"+str(BaseCount)
-                self.generateGrassClump(BaseCount, count * BaseCount)
+                ClumpName = "GrassClumpAxis_"+str(BaseCount)
+                print("Generating Grass Clump: " + ClumpName)
+                cmds.duplicate(BaseName, n=ClumpName)
                 BaseCount += 1
                 count = 0
-            cmds.instance(BaseName, n="Clump_"+str(BaseCount)+ "_" + str(count), st=0)
+            cmds.instance(ClumpName, n="Clump_"+str(BaseCount)+ "_" + str(count), st=0)
             cmds.move(p[0] + r.uniform(-1, 1), p[1], p[2] + r.uniform(-1, 1), "Clump_"+str(BaseCount)+ "_" + str(count))
+            cmds.rotate("0deg", str(r.uniform(0, 360)) + "deg", "0deg", "Clump_"+str(BaseCount)+ "_" + str(count), os=1)
             cmds.parent("Clump_"+str(BaseCount)+ "_" + str(count), parent)
             count += 1
         cmds.hide(BaseName)
@@ -537,7 +533,7 @@ class Grass:
         Returns:
             None
         """
-        groupName = "GrassClumpAxis_"+str(gpNum)
+        groupName = "GrassTrueClump"
         cmds.circle(n=groupName, r=0.1, s=5)
         cmds.xform(groupName, ro=(90,0,0))
         points = []
