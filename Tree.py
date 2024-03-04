@@ -405,7 +405,7 @@ class Terrain:
         # cmds.polyPlane(n=self.name, w=xSize, h=ySize, sx=self.xSub, sy=self.ySub)
         cmds.nurbsPlane(n=self.name, w=xSize, lr=ySize / xSize, u=self.xSub, v=self.ySub)
         cmds.setAttr(self.name+".rotate", 0, 0, 90, type="double3")
-        a *= 10
+        a *= 2
         for y in range(0, self.ySub + 1):
             for x in range(0, self.xSub + 1):
                 v = x + (y * self.xSub)
