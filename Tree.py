@@ -1,6 +1,4 @@
 import contextlib
-from posixpath import basename
-import string
 import maya.cmds as cmds
 import random as r
 import math as m
@@ -140,22 +138,21 @@ class terrainUI:
         r.seed(self.Seed.getValue())
         terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
-        if self.TreesExist.getValue():
-            points = terrainItem.generate_random_points_on_non_flat_plane(terrainItem.name, m.floor((self.TreeDensity.getValue() / 1000) * self.WidthInput.getValue() * self.DepthInput.getValue()))
-            trees = []
-            for t in range(self.TreeVariants.getValue()):
-                temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), 50, 0, 250, 50, 0.7)
-                temp.generateTree(r.uniform(0.15, 0.25), 1, r.randint(2, 3), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.randint(15, 40))
-                trees.append(temp)
-            for p in points:
-                trees[r.randint(0, len(trees) - 1)].placeTree(p)
-
-            for t in trees:
-                t.hide()
         if self.GrassExist.getValue():
             points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor((self.GrassDensity.getValue() / 10) * self.WidthInput.getValue() * self.DepthInput.getValue()))
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
+        if self.TreesExist.getValue():
+            trees = []
+            for t in range(self.TreeVariants.getValue()):
+                temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), 5, 0, 250, 50, 0.7)
+                temp.generateTree(r.uniform(0.15, 0.25), 1, r.randint(2, 3), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.randint(15, 40))
+                trees.append(temp)
+            points = terrainItem.generate_random_points_on_non_flat_plane(terrainItem.name, m.floor((self.TreeDensity.getValue() / 1000) * self.WidthInput.getValue() * self.DepthInput.getValue()))
+            for p in points:
+                trees[r.randint(0, len(trees) - 1)].placeTree(p)
+            for t in trees:
+                t.hide()
         terrainItem.smooth(2)
         cmds.deleteUI(self.WinControl)
 
@@ -176,7 +173,7 @@ class Tree:
         cmds.instance(self.name, n=newName, st=0)
         self.instances += 1
         cmds.move(location[0], location[1], location[2], newName)
-        cmds.rotate("0deg", str(r.uniform(0, 360)) + "deg", "0deg", newName, os=1)
+        # cmds.rotate("0deg", str(r.uniform(0, 360)) + "deg", "0deg", newName, os=1)
         cmds.rotate("0deg", "0deg", "-90deg", newName, os=1)
 
     def hide(self):
@@ -408,7 +405,7 @@ class Terrain:
         # cmds.polyPlane(n=self.name, w=xSize, h=ySize, sx=self.xSub, sy=self.ySub)
         cmds.nurbsPlane(n=self.name, w=xSize, lr=ySize / xSize, u=self.xSub, v=self.ySub)
         cmds.setAttr(self.name+".rotate", 0, 0, 90, type="double3")
-
+        a *= 10
         for y in range(0, self.ySub + 1):
             for x in range(0, self.xSub + 1):
                 v = x + (y * self.xSub)
@@ -423,7 +420,7 @@ class Terrain:
         # cmds.polySmooth(self.name, dv=amount, kb=0)
         cmds.rebuildSurface(self.name, rt=0, dir=2, su=self.xSub ** amount, sv=self.ySub ** amount)
         
-    def generate_random_points_on_non_flat_plane(self, plane:string, num_points: int):
+    def generate_random_points_on_non_flat_plane(self, plane, num_points):
         points = []
         for _ in range(num_points):
             u = r.uniform(0, 1)
@@ -508,20 +505,22 @@ class Grass:
         for p in points:
             if count == 50:
                 try:
-                    cmds.hide(ClumpName)
+                    # pass
+                    cmds.delete(ClumpName)
                 except:
                     pass
                 ClumpName = "GrassClumpAxis_"+str(BaseCount)
                 print("Generating Grass Clump: " + ClumpName)
                 cmds.duplicate(BaseName, n=ClumpName)
+                cmds.rotate(0, str(r.uniform(0, 360)) + "deg", 0, ClumpName, ws=1, r=1 )
                 BaseCount += 1
                 count = 0
             cmds.instance(ClumpName, n="Clump_"+str(BaseCount)+ "_" + str(count), st=0)
             cmds.move(p[0] + r.uniform(-1, 1), p[1], p[2] + r.uniform(-1, 1), "Clump_"+str(BaseCount)+ "_" + str(count))
-            cmds.rotate("0deg", str(r.uniform(0, 360)) + "deg", "0deg", "Clump_"+str(BaseCount)+ "_" + str(count), os=1)
             cmds.parent("Clump_"+str(BaseCount)+ "_" + str(count), parent)
             count += 1
-        cmds.hide(BaseName)
+        cmds.delete(BaseName)
+        cmds.delete(ClumpName)
 
     def generateGrassClump(self, gpNum, number):
         """
@@ -535,26 +534,27 @@ class Grass:
             None
         """
         groupName = "GrassTrueClump"
-        cmds.circle(n=groupName, r=0.1, s=5)
+        cmds.circle(n=groupName, r=0.5, s=5)
         cmds.xform(groupName, ro=(90,0,0))
-        points = []
         for i in range(5):
             prName = "GrassProfile_"+str(number)+"_"+str(i)
-            points.append(cmds.xform(groupName+".cv["+str(i)+"]", q=1, t=1,))
-            cmds.circle(n=prName, r=0.1, s=4)
+            point = cmds.xform(groupName+".cv["+str(i)+"]", q=1, t=1,)
+            cmds.circle(n=prName, r=0.2, s=4)
             cmds.parent(prName, groupName)
-            cmds.xform(prName, ro=(90,0,0))
-            cmds.xform(prName+".cv[0]", t=[-1, 0, 0])
+            cmds.xform(prName, ro=(0,0,90))
+            # cmds.xform(prName+".cv[0]", t=[-0.5, 0, 0])
             ptName = "GrassCurve_"+str(number)+"_"+str(i)
             mName = "GrassMesh_"+str(number)+"_"+str(i)
             self.generateCurve(ptName, [0, 0, 0], 10)
             cmds.parent(ptName, groupName)
-            cmds.extrude(prName, ptName, et=2, n=mName,fpt=1,p=[0,0,0],sc=0.5,po=0)
-            cmds.parent(mName, groupName)
+            cmds.extrude(prName, ptName, et=2, n=mName,fpt=1,p=[0,0,0],sc=0,po=1)
+            cmds.polyNormal(mName, nm=0)
+            # cmds.reverseSurface(mName, ch=False, rpo=1, d=3)
+            cmds.parent(mName, ptName)
             cmds.hyperShade(mName, a="GrassMat")
-            cmds.xform("GrassMesh_"+str(number)+"_"+str(i), t=points[i])
+            cmds.xform(ptName, t=point)
+            cmds.delete(prName)
 
-
-cmds.scriptEditorInfo(sw=1)
+cmds.scriptEditorInfo(sw=1, sr=1)
 GUIItem = terrainUI()
 GUIItem.createTerrainUI()
