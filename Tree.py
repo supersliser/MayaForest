@@ -98,7 +98,7 @@ class BoolInput:
         return cmds.checkBox(self.inpControl, q=1, v=1)
 class terrainUI:
     
-    def updateProgress(self, i= 0, text = "Please Wait...", newMax = -1):
+    def updateProgress(self, text = "Please Wait..."):
         """
         Update the progress bar with the given progress and text.
 
@@ -109,9 +109,7 @@ class terrainUI:
         Returns:
             None
         """
-        if newMax != -1:
-            cmds.progressWindow(e=1, max=self.max + newMax)
-        self.progress += i
+        self.progress += 1
         cmds.progressWindow(e=1, p=self.progress, label=text)
     def createTerrainUI(self):
         """
@@ -151,35 +149,37 @@ class terrainUI:
         """
         Generate terrain and place trees on the terrain.
         """
-        self.max = 5 + self.TreeVariants.getValue()
-        cmds.progressWindow(title="Generating Forest", progress=0, min=0, max=self.max, status="Generating Seed...", isInterruptable=0)
+        max = 3
+        if self.TreesExist.getValue():
+            max += self.TreeVariants.getValue() + 2
+        if self.GrassExist.getValue():
+            max += 2
+        cmds.progressWindow(title="Generating Forest", progress=0, min=0, max=max, status="Generating Seed...", isInterruptable=0)
         r.seed(self.Seed.getValue())
-        self.updateProgress(i=1, text="Generating Terrain")
+        self.updateProgress(text="Generating Terrain")
         terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
-        self.updateProgress(i=1, text="Generating Grass Points")
         if self.GrassExist.getValue():
+            self.updateProgress(text="Generating Grass Points")
             points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor((self.GrassDensity.getValue() / 10) * self.WidthInput.getValue() * self.DepthInput.getValue()))
-            self.updateProgress(i=1, text="Generating Grass", newMax=len(points))
+            self.updateProgress(text="Generating Grass")
             grass = Grass()
-            grass.generateGrass(points, terrainItem.name, self.updateProgress)
-        self.updateProgress(i=1, text="Generating Trees")
+            grass.generateGrass(points, terrainItem.name)
         if self.TreesExist.getValue():
+            self.updateProgress(text="Generating Trees")
             trees = []
             for t in range(self.TreeVariants.getValue()):
                 temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), 5, 0, 250, 50, 0.7)
-                self.updateProgress(i=1, text="Generating Tree " + str(t))
+                self.updateProgress(text="Generating Tree " + str(t))
                 temp.generateTree(r.uniform(0.15, 0.25), 1, r.randint(2, 3), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.randint(15, 40))
                 trees.append(temp)
-            self.updateProgress(i=1, text="Generating Tree Points")
+            self.updateProgress(text="Generating Tree Instances")
             points = terrainItem.generate_random_points_on_non_flat_plane(terrainItem.name, m.floor((self.TreeDensity.getValue() / 1000) * self.WidthInput.getValue() * self.DepthInput.getValue()))
-            self.updateProgress(newMax=len(points))
             for p in points:
-                self.updateProgress(i=1, text="Placing Tree at " + str(p))
                 trees[r.randint(0, len(trees) - 1)].placeTree(p)
             for t in trees:
                 t.hide()
-        self.updateProgress(i=1, text="Smoothing Terrain")
+        self.updateProgress(text="Smoothing Terrain")
         terrainItem.smooth(2)
         self.updateProgress(text="Process Complete")
         cmds.deleteUI(self.WinControl)
@@ -514,7 +514,7 @@ class Grass:
         # print(points)
         cmds.curve(n=name, p=points, bez=1)
         
-    def generateGrass(self, points, parent, progressWindow):
+    def generateGrass(self, points, parent):
         """
         Generate grass based on the given points and parent object.
 
@@ -546,7 +546,6 @@ class Grass:
             cmds.instance(ClumpName, n="Clump_"+str(BaseCount)+ "_" + str(count), st=0)
             cmds.move(p[0] + r.uniform(-1, 1), p[1], p[2] + r.uniform(-1, 1), "Clump_"+str(BaseCount)+ "_" + str(count))
             cmds.parent("Clump_"+str(BaseCount)+ "_" + str(count), parent)
-            progressWindow(i=1, text="Generating Grass: " + "Clump_"+str(BaseCount)+ "_" + str(count))
             count += 1
         cmds.delete(BaseName)
         cmds.delete(ClumpName)
