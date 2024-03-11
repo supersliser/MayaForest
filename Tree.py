@@ -4,17 +4,16 @@ import random as r
 import math as m
 
 class TextInput:
-    inpControl = 0
-    default = ""
     def __init__(self, name, default, nullable=False):
         """
         Initializes the instance with the given name, default value, and nullable flag.
 
-        Parameters:
+        Args:
             name (str): The name for the input control.
             default (str): The default value for the input control.
             nullable (bool, optional): Flag indicating if the input control can be nullable. Defaults to False.
         """
+        # if the input can be set to "" then the default must be set and the input must check for if it has been left empty
         if not nullable:
             self.inpControl = cmds.textFieldGrp(label=name, tx=default, tcc=self.checkEmpty)
             self.default = default
@@ -39,7 +38,6 @@ class TextInput:
         return cmds.textFieldGrp(self.inpControl, q=1, tx=1)
 
 class IntInput:
-    inpControl = 0
     def __init__(self, name, minValue, maxValue, defaultValue = 0):
         """
         Initialize the class with the given parameters.
@@ -55,7 +53,7 @@ class IntInput:
         """
         A function that retrieves the value of an intSliderGrp control.
 
-        Parameters:
+        Args:
             self: the instance of the class
             No explicit parameters
 
@@ -65,10 +63,15 @@ class IntInput:
         return cmds.intSliderGrp(self.inpControl, q=1, v=1)
 
 class FloatInput:
-    inpControl = 0
     def __init__(self, name, minValue, maxValue, defaultValue = 0):
         """
-        Initializes a new instance of the class with the specified name, minimum value, maximum value, and optional default value.
+        Initialize the class with the given parameters.
+
+        Args:
+            name (str): The name of the floatSliderGrp.
+            minValue (int): The minimum value for the floatSliderGrp.
+            maxValue (int): The maximum value for the floatSliderGrp.
+            defaultValue (int, optional): The default value for the floatSliderGrp. Defaults to 0.
         """
         self.inpControl = cmds.floatSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue, cw=[1, 300])
     def getValue(self):
@@ -78,17 +81,13 @@ class FloatInput:
         return cmds.floatSliderGrp(self.inpControl, q=1, v=1)
 
 class BoolInput:
-    inpControl = 0
     def __init__(self, name, defaultState):
         """
         Initializes the class with the given name and default state.
 
-        Parameters:
+        Args:
             name (str): The name for the checkbox.
             defaultState (bool): The default state of the checkbox.
-
-        Returns:
-            None
         """
         self.inpControl = cmds.checkBox(l=name, v=defaultState)
     def getValue(self):
@@ -100,14 +99,10 @@ class terrainUI:
     
     def updateProgress(self, text = "Please Wait..."):
         """
-        Update the progress bar with the given progress and text.
+        Updates the progress window and sets the progress label text.
 
         Args:
-            i (int, optional): The progress to display. Defaults to 0.
-            text (str, optional): The text to display. Defaults to "Please Wait...".
-
-        Returns:
-            None
+            text (str): The label text to display in the progress window. Default is "Please Wait...").
         """
         self.progress += 1
         cmds.progressWindow(e=1, p=self.progress, label=text)
@@ -120,8 +115,8 @@ class terrainUI:
         self.NameInput = TextInput("Name of terrain", "Terrain")
         self.WidthInput = IntInput("Width of terrain", 1, 2000, 150)
         self.DepthInput = IntInput("Depth of terrain", 1, 2000, 150)
-        self.XSubdivision = IntInput("subdivisions on X axis", 3, 200, 5)
-        self.YSubdivision = IntInput("subdivisions on Y axis", 3, 200, 5)
+        self.XSubdivision = IntInput("Subdivisions on X axis", 3, 200, 5)
+        self.YSubdivision = IntInput("Subdivisions on Y axis", 3, 200, 5)
         self.TreesExist = BoolInput("Generate Trees", True)
         self.GrassExist = BoolInput("Generate Grass", True)
         self.TreeVariants = IntInput("Number of different types of trees to use", 1, 10, 4)
@@ -135,13 +130,7 @@ class terrainUI:
         self.progress = 0
     def Cancel(self, *args):
         """
-        Cancel the specified UI element.
-        
-        Parameters:
-            *args: Variable length argument list.
-        
-        Returns:
-            None
+        Cancel the specified UI element, runs from the cancel button being clicked.
         """
         cmds.deleteUI(self.WinControl)
         
@@ -150,6 +139,7 @@ class terrainUI:
         Generate terrain and place trees on the terrain.
         """
         max = 3
+        # The max number of things to do changes based on whether or not the user wants trees or grass
         if self.TreesExist.getValue():
             max += self.TreeVariants.getValue() + 2
         if self.GrassExist.getValue():
@@ -161,22 +151,41 @@ class terrainUI:
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
         if self.GrassExist.getValue():
             self.updateProgress(text="Generating Grass Points")
-            points = terrainItem.generate_random_points_on_non_flat_plane(plane=terrainItem.name, num_points=m.floor((self.GrassDensity.getValue() / 10) * self.WidthInput.getValue() * self.DepthInput.getValue()))
+            pointAmountMultiplier = 10
+            points = terrainItem.generateRandomPointsOnPlane(plane=terrainItem.name, num_points=m.floor((self.GrassDensity.getValue() / pointAmountMultiplier) * self.WidthInput.getValue() * self.DepthInput.getValue()))
             self.updateProgress(text="Generating Grass")
             grass = Grass()
             grass.generateGrass(points, terrainItem.name)
         if self.TreesExist.getValue():
             self.updateProgress(text="Generating Trees")
             trees = []
+            # generates template trees that are used for instancing
             for t in range(self.TreeVariants.getValue()):
-                temp = Tree(terrainItem.name + "_Tree" + str(t), r.uniform(0.5, 1.5), 5, 0, 250, 50, 0.7)
+                radiusMultiplier = r.uniform(0.5, 1.5)
+                animationVariance = 5
+                animationStartPoint = 0
+                animationEndPoint = 250
+                animationStepAmount = 50
+                heightToStartGeneratingTrees = 0.7
+                densityOfLeavesAndBranches = r.uniform(0.15, 0.25)
+                branchMultiplierStart = 1
+                branchRecursionAmount = r.randint(2, 3)
+                treeRandomnessSeed = self.Seed.getValue() + t
+                treeLocation = (0, 0, 0)
+                parentTerrain = terrainItem.name
+                height = r.randint(15, 40)
+
+                temp = Tree(terrainItem.name + "_Tree" + str(t),radiusMultiplier , animationVariance, animationStartPoint, animationEndPoint, animationStepAmount, heightToStartGeneratingTrees)
                 self.updateProgress(text="Generating Tree " + str(t))
-                temp.generateTree(r.uniform(0.15, 0.25), 1, r.randint(2, 3), self.Seed.getValue() + t, (0, 0, 0), terrainItem.name, r.randint(15, 40))
+                temp.generateTree(density=densityOfLeavesAndBranches, branchStart=branchMultiplierStart, branchRecLevel=branchRecursionAmount, seed=treeRandomnessSeed, location=treeLocation, terrain=parentTerrain, height=height)
                 trees.append(temp)
             self.updateProgress(text="Generating Tree Instances")
-            points = terrainItem.generate_random_points_on_non_flat_plane(terrainItem.name, m.floor((self.TreeDensity.getValue() / 1000) * self.WidthInput.getValue() * self.DepthInput.getValue()))
+            pointAmountMultiplier = 1000
+            points = terrainItem.generateRandomPointsOnPlane(terrainItem.name, m.floor((self.TreeDensity.getValue() / pointAmountMultiplier) * self.WidthInput.getValue() * self.DepthInput.getValue()))
+            #places a randomly chosen tree instance at each point on the plane
             for p in points:
                 trees[r.randint(0, len(trees) - 1)].placeTree(p)
+            # template trees can only be hidden once their instances are created
             for t in trees:
                 t.hide()
         self.updateProgress(text="Smoothing Terrain")
@@ -192,16 +201,12 @@ class Tree:
 
         Args:
             location (list): The x, y, z coordinates of the location.
-
-        Returns:
-            None
         """
         newName = self.name + "_Inst" + str(self.instances)
         print("Placing tree: " + newName)
         cmds.instance(self.name, n=newName, st=0)
         self.instances += 1
         cmds.move(location[0], location[1], location[2], newName)
-        # cmds.rotate("0deg", str(r.uniform(0, 360)) + "deg", "0deg", newName, os=1)
         cmds.rotate("0deg", "0deg", "-90deg", newName, os=1)
 
     def hide(self):
@@ -211,7 +216,7 @@ class Tree:
         cmds.setAttr(self.name + ".visibility", 0)
     def generateTree(self, density, branchStart, branchRecLevel, seed, location, terrain, height):
         """
-        Generate a tree based on the given parameters.
+        Generate a tree based on the given arguments.
 
         Args:
             density (float): The density of the tree.
@@ -221,9 +226,6 @@ class Tree:
             location (list): The location of the tree.
             terrain (str): The terrain on which the tree is placed.
             height (float): The height of the tree.
-
-        Returns:
-            None
         """
         r.seed(seed)
         with contextlib.suppress(Exception):
@@ -237,17 +239,16 @@ class Tree:
         
     def __init__(self, name = "", radius = 0, animAmount = 0, animStart = 0, animEnd = 0, animStep = 0, genHeight = 0):
         """
-        Initializes the attributes of the tree object.
+        Initialize the object with the given parameters.
 
-        Parameters:
-            name (str): the name of the tree
-            radius (int): the radius of the tree
-            leaves (bool): whether the tree has leaves or not
-            animAmount (int): the amount of animation
-            animStart (int): the start of the animation
-            animEnd (int): the end of the animation
-            animStep (int): the step of the animation
-            genHeight (int): the height of the tree
+        Args:
+            name (str): The name of the object (default is an empty string).
+            radius (int): The radius of the object (default is 0).
+            animAmount (int): The amount of animation (default is 0).
+            animStart (int): The start value of the animation (default is 0).
+            animEnd (int): The end value of the animation (default is 0).
+            animStep (int): The step of the animation (default is 0).
+            genHeight (int): The height of the generation (default is 0).
         """
         self.name = name
         self.radius = radius
@@ -260,18 +261,16 @@ class Tree:
         """
         Generate a curve with given name, start, height, and optional integer parameter.
         
-        Parameters:
+        Args:
             name (str): the name of the curve
             start (list): the starting point of the curve
             height (int): the height of the curve
             i (int, optional): the optional integer parameter
-        
-        Returns:
-            None
         """
         points:list = [start]
         j = 0.0
         while j < 1:
+            # generates a curve using points that follow a generic sin curve with a random magnitude multiplier
             points.append(
                 [
                     points[-1][0] + (m.asin(j) / 90) * r.uniform(0, 200 * i),
@@ -280,18 +279,16 @@ class Tree:
                 ]
             )
             j += 0.1
-        # print(points)
         cmds.curve(n=name, p=points, bez=1)
 
-    def generatePoints(self, n, density: float, height, i):
+    def generatePoints(self, n, density: float, height):
         """
-        Generate points along a curve based on the given parameters and return a list of items.
+        Generate points with given name, density, height, and optional integer parameter.
         
-        :param n: integer
-        :param density: float
-        :param height: float
-        :param i: integer
-        :return: list
+        Args:
+            n (str): the name of the curve
+            density (float): the density of the curve
+            height (int): the height of the curve
         """
         items = []
         for _ in range(m.floor(density * 100)):
@@ -309,9 +306,6 @@ class Tree:
             point (tuple): the position of the curve
             radius (float): the radius of the curve
             i: an integer parameter
-
-        Returns:
-            None
         """
         cmds.circle(n=f"{name}_profile", r=radius)
         cmds.xform(f"{name}_profile", t=point)
@@ -333,13 +327,11 @@ class Tree:
             branch: str, name of the branch
             den: float, parameter for generating points
             height: float, height of the branch
-
-        Returns:
-            None
         """
         height *= i
         num = 0
-        points = self.generatePoints(branch, den, self.genHeight, i + dec)
+        points = self.generatePoints(branch, den, self.genHeight)
+        # checks whether this recursion should be a branch recursion or leaf recursion
         if r.random() <= i:
             for point in points:
                 newName = f"{branch}_Branch{str(num)}"
@@ -353,6 +345,7 @@ class Tree:
                 num+= 1
         elif branch != self.name:
             newName = f"{branch}_Leaf{str(num)}"
+            #duplicates the original leaf to avoid too many instances of the same item (all instances are connected)
             cmds.duplicate("Leaf1", n=newName)
             cmds.parent(newName, branch)
             cmds.xform(newName, translation=(points[0][0][0], points[0][0][1], points[0][0][2]), ws=1)
@@ -366,6 +359,7 @@ class Tree:
                 os=1
             )
             num += 1
+            #then generates multiple instances of the duplicated leaf
             for point in points[1:]:
                 newIName = f"{branch}_Leaf{str(num)}"
                 cmds.instance(newName, n=newIName, st=0)
@@ -383,14 +377,12 @@ class Tree:
         """
         Create an animation for the given name with the specified itemRotation.
         
-        Parameters:
+        Args:
             name (str): the name of the animation
-            itemRotation (list): a list containing the rotation values for X, Y, and Z axes
-            
-        Returns:
-            None
+            itemRotation (list): a list containing the rotation values for X, Y, and Z axes before being animated
         """
         for i in range(m.floor(self.animStart), m.floor(self.animStop), m.floor(self.animStep * 2)):
+            #animation step has 2 parts, start and end point to make sure trees always return to original point
             cmds.setKeyframe(name, at="rotateX", time=i, v=itemRotation[0])
             cmds.setKeyframe(name, at="rotateY", time=i, v=itemRotation[1])
             cmds.setKeyframe(name, at="rotateZ", time=i, v=itemRotation[2])
@@ -418,19 +410,27 @@ class Tree:
 
 class Terrain:
     def __init__(self, name, xSub, ySub):
+        """
+        Initialize the object with the given parameters.
+        
+        Args:
+            name (str): the name of the terrain
+            xSub (int): the number of subdivisions in the x direction
+            ySub (int): the number of subdivisions in the y direction
+        """
         self.name = name
         self.xSub = xSub
         self.ySub = ySub
     
-    def generateTerrain(self, xSize, ySize, a):        
+    def generateTerrain(self, xSize, ySize, a):
         """
-            Generate terrain based on the provided xSize, ySize, and a parameters.
-    
-            :param xSize: the size of the terrain in the x direction
-            :param ySize: the size of the terrain in the y direction
-            :param a: parameter controlling the terrain generation
+        A method to generate a terrain using the nurbsPlane function and randomize the height of each control vertex.
+        
+        Args:
+            xSize (float): the width of the terrain
+            ySize (float): the depth of the terrain
+            a (float): the amplitude of the terrain
         """
-        # cmds.polyPlane(n=self.name, w=xSize, h=ySize, sx=self.xSub, sy=self.ySub)
         cmds.nurbsPlane(n=self.name, w=xSize, lr=ySize / xSize, u=self.xSub, v=self.ySub)
         cmds.setAttr(self.name+".rotate", 0, 0, 90, type="double3")
         a *= 2
@@ -438,17 +438,28 @@ class Terrain:
             for x in range(0, self.xSub + 1):
                 v = x + (y * self.xSub)
                 cmds.move(0, r.uniform(-a, a), 0, self.name+".cv[" + str(v) + "]", r=1)
-                # cmds.polyMoveVertex(self.name+".vtx[" + str(v) + "]", ty=(r.random() * a * 2) - a)
         cmds.hyperShade(self.name, a="MudMat")
 
     def smooth(self, amount):
         """
         A method to apply smoothing to the surface using the polySmooth function.
+        
+        Args:
+            amount (int): the amount of smoothing to apply
         """
-        # cmds.polySmooth(self.name, dv=amount, kb=0)
         cmds.rebuildSurface(self.name, rt=0, dir=2, su=self.xSub ** amount, sv=self.ySub ** amount)
         
-    def generate_random_points_on_non_flat_plane(self, plane, num_points):
+    def generateRandomPointsOnPlane(self, plane, num_points):
+        """
+        Generate random points on a given plane.
+
+        Args:
+            plane: The plane on which the points will be generated.
+            num_points: The number of random points to generate.
+
+        Returns:
+            List: A list of randomly generated points on the plane.
+        """
         points = []
         for _ in range(num_points):
             u = r.uniform(0, 1)
@@ -457,48 +468,17 @@ class Terrain:
             print(point_position)
             points.append(point_position)
         return points
-    
-    # def generateRandomSurfacePoints(self, tolerance, smoothing = 1):
-    #     """
-    #     Generates random surface points based on the given tolerance.
-
-    #     Parameters:
-    #         tolerance (float): The tolerance level for generating random surface points.
-
-    #     Returns:
-    #         list: A list of randomly generated surface points.
-    #     """
-
-    #     surfacePoints = []
-    #     if tolerance == 1:
-    #         for y in range(0, (self.ySub + 1) * smoothing):
-    #             for x in range(0, m.floor((self.xSub + 1) * smoothing)):
-    #                 v = x + (y * self.xSub)
-    #                 pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
-    #                 surfacePoints.append(pointPosition)
-    #     else:
-    #         for y in range(0, (self.ySub + 1) * smoothing):
-    #             for x in range(0, (self.xSub + 1) * smoothing):
-    #                 v = x + (y * self.xSub)
-    #                 if r.random() <= tolerance:
-    #                     pointPosition = cmds.xform(self.name + ".vtx[" + str(v) + "]", query=True, translation=True, os=True)
-    #                     surfacePoints.append(pointPosition)
-    #     return surfacePoints
 
 class Grass:
 
     def generateCurve(self, name, start, height):
         """
-        Generate a curve with given name, start, height, and optional integer parameter.
+        Generate a curve with given name, start and height using a generic sin curve and a random magnitude multiplier.
         
-        Parameters:
+        Args:
             name (str): the name of the curve
             start (list): the starting point of the curve
             height (int): the height of the curve
-            i (int, optional): the optional integer parameter
-        
-        Returns:
-            None
         """
         points:list = [start]
         j = 0.0
@@ -511,7 +491,6 @@ class Grass:
                 ]
             )
             j += 0.2
-        # print(points)
         cmds.curve(n=name, p=points, bez=1)
         
     def generateGrass(self, points, parent):
@@ -521,9 +500,6 @@ class Grass:
         Args:
             points: The points to generate the grass on.
             parent: The parent object for the generated grass.
-
-        Returns:
-            None
         """
         BaseCount = 1
         count:int = 50
@@ -531,9 +507,9 @@ class Grass:
         self.generateGrassClump(BaseCount, count * BaseCount)
         ClumpName = "GrassClumpAxis_"+str(BaseCount)
         for p in points:
+            #every 50 instances a new copy should be created to avoid an instancing issue (all instances of an object are connected so when attributes of an instance, all instances are edited)
             if count == 50:
                 try:
-                    # pass
                     cmds.delete(ClumpName)
                 except:
                     pass
@@ -550,16 +526,12 @@ class Grass:
         cmds.delete(BaseName)
         cmds.delete(ClumpName)
 
-    def generateGrassClump(self, gpNum, number):
+    def generateGrassClump(self, number):
         """
-        Generates a grass clump group and its associated curves and meshes.
+        Generates a grass clump group and its associated curves and meshes. The clump is focussed around a circle.
 
         Args:
-            groupName (str): The name of the group to create.
             number (int): The number associated with the grass clump.
-
-        Returns:
-            None
         """
         groupName = "GrassTrueClump"
         cmds.circle(n=groupName, r=0.5, s=5)
@@ -570,14 +542,12 @@ class Grass:
             cmds.circle(n=prName, r=0.2, s=4)
             cmds.parent(prName, groupName)
             cmds.xform(prName, ro=(0,0,90))
-            # cmds.xform(prName+".cv[0]", t=[-0.5, 0, 0])
             ptName = "GrassCurve_"+str(number)+"_"+str(i)
             mName = "GrassMesh_"+str(number)+"_"+str(i)
             self.generateCurve(ptName, [0, 0, 0], 10)
             cmds.parent(ptName, groupName)
             cmds.extrude(prName, ptName, et=2, n=mName,fpt=1,p=[0,0,0],sc=0,po=1)
             cmds.polyNormal(mName, nm=0)
-            # cmds.reverseSurface(mName, ch=False, rpo=1, d=3)
             cmds.parent(mName, ptName)
             cmds.hyperShade(mName, a="GrassMat")
             cmds.xform(ptName, t=point)
