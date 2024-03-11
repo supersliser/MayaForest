@@ -504,7 +504,7 @@ class Grass:
         BaseCount = 1
         count:int = 50
         BaseName = "GrassTrueClump"
-        self.generateGrassClump(BaseCount, count * BaseCount)
+        self.generateGrassClump(count * BaseCount)
         ClumpName = "GrassClumpAxis_"+str(BaseCount)
         for p in points:
             #every 50 instances a new copy should be created to avoid an instancing issue (all instances of an object are connected so when attributes of an instance, all instances are edited)
