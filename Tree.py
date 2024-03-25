@@ -115,16 +115,16 @@ class terrainUI:
         self.NameInput = TextInput("Name of terrain", "Terrain")
         self.WidthInput = IntInput("Width of terrain", 1, 2000, 150)
         self.DepthInput = IntInput("Depth of terrain", 1, 2000, 150)
-        self.XSubdivision = IntInput("Subdivisions on X axis", 3, 200, 5)
-        self.YSubdivision = IntInput("Subdivisions on Y axis", 3, 200, 5)
         self.TreesExist = BoolInput("Generate Trees", True)
         self.GrassExist = BoolInput("Generate Grass", True)
+        self.FireFliesExist = BoolInput("Generate Fireflies", True)
         self.TreeVariants = IntInput("Number of different types of trees to use", 1, 10, 4)
         self.Amplitude = FloatInput("Difference between highest point and lowest point in terrain", 1, 10, 5)
         self.TreeDensity = FloatInput("Percentage of space to generate trees", 0, 1, 0.4)
         self.GrassDensity = FloatInput("Percentage of space to generate grass", 0, 1, 0.7)
+        self.FireFlyDensity = FloatInput("Percentage of space to generate fireflies", 0, 1, 0.2)
         self.Seed = IntInput("Randomness seed", 1, 9999999, 1)
-        self.GenerateButton = cmds.button(l="Generate Terrain", c=self.GenerateTerrain)
+        self.GenerateButton = cmds.button(l="Generate", c=self.GenerateTerrain)
         self.CancelButton = cmds.button(l="Cancel", c=self.Cancel)
         cmds.showWindow(self.WinControl)
         self.progress = 0
@@ -144,10 +144,12 @@ class terrainUI:
             max += self.TreeVariants.getValue() + 2
         if self.GrassExist.getValue():
             max += 2
-        cmds.progressWindow(title="Generating Forest", progress=0, min=0, max=max, status="Generating Seed...", isInterruptable=0)
+        if self.FireFliesExist.getValue():
+            max += 1
+        self.ProgressWindow = cmds.progressWindow(title="Generating Forest", progress=0, min=0, max=max, status="Generating Seed...", isInterruptable=0)
         r.seed(self.Seed.getValue())
         self.updateProgress(text="Generating Terrain")
-        terrainItem = Terrain(self.NameInput.getValue(), self.XSubdivision.getValue(), self.YSubdivision.getValue())
+        terrainItem = Terrain(self.NameInput.getValue(), 5, 5)
         terrainItem.generateTerrain(self.WidthInput.getValue(), self.DepthInput.getValue(), self.Amplitude.getValue())
         if self.GrassExist.getValue():
             self.updateProgress(text="Generating Grass Points")
@@ -188,10 +190,14 @@ class terrainUI:
             # template trees can only be hidden once their instances are created
             for t in trees:
                 t.hide()
+        if self.FireFliesExist.getValue():
+            self.updateProgress(text="Generating Fireflies")
+            terrainItem.generateFireFlies(self.WidthInput.getValue(), self.DepthInput.getValue(), m.floor(self.FireFlyDensity.getValue() / 100 * self.WidthInput.getValue() * self.DepthInput.getValue()), animationStartPoint, animationEndPoint, animationStepAmount, animationVariance)
         self.updateProgress(text="Smoothing Terrain")
         terrainItem.smooth(2)
         self.updateProgress(text="Process Complete")
         cmds.deleteUI(self.WinControl)
+        cmds.progressWindow(e=1, endProgress=1)
 
 class Tree:
     instances = 0
@@ -208,6 +214,7 @@ class Tree:
         self.instances += 1
         cmds.move(location[0], location[1], location[2], newName)
         cmds.rotate("0deg", "0deg", "-90deg", newName, os=1)
+        cmds.xform(newName, ro=("0deg", str(r.randint(0, 360)) + "deg", "0deg"), r=1, os=1)
 
     def hide(self):
         """
@@ -437,9 +444,34 @@ class Terrain:
         for y in range(0, self.ySub + 1):
             for x in range(0, self.xSub + 1):
                 v = x + (y * self.xSub)
-                cmds.move(0, r.uniform(-a, a), 0, self.name+".cv[" + str(v) + "]", r=1)
+                cmds.xform(
+                    self.name + ".cv[" + str(v) + "]", t=(0, r.uniform(-a, a), 0), r=1, ws=1
+                )
         cmds.hyperShade(self.name, a="MudMat")
 
+    def generateFireFlies(self, xSize, ySize, fireFlyDensity, animStart, animEnd, animStep, animVariance):
+        for i in range(0, fireFlyDensity):
+            cmds.polySphere(n="FireFly" + str(i), r=0.1)
+            cmds.parent("FireFly" + str(i), self.name)
+            cmds.hyperShade("FireFly" + str(i), a="FireFlyMat")
+            currentPosition = [
+                r.uniform(2, 50),
+                r.uniform(-xSize / 2, xSize / 2),
+                r.uniform(-ySize / 2, ySize / 2),
+            ]
+            cmds.rotate("0deg", "0deg", "0deg", "FireFly" + str(i))
+            cmds.move(currentPosition[0], currentPosition[1], currentPosition[2], "FireFly" + str(i))
+            for a in range(animStart, animEnd - animStep, animStep):
+                cmds.setKeyframe("FireFly" + str(i), at="translateX", time=a, v=currentPosition[0])
+                cmds.setKeyframe("FireFly" + str(i), at="translateY", time=a, v=currentPosition[1])
+                cmds.setKeyframe("FireFly" + str(i), at="translateZ", time=a, v=currentPosition[2])
+                currentPosition[0] += r.uniform(-animVariance, animVariance)
+                currentPosition[1] += r.uniform(-animVariance, animVariance)
+                currentPosition[2] += r.uniform(-animVariance, animVariance)
+            lastEmission = 0
+            for a in range(animStart, animEnd, m.floor(r.uniform(animStep / 2, animStep * 2))):
+                    cmds.setKeyframe("FireFly" + str(i), at="FireFlyMat.emission", time=a, v=not lastEmission)
+        
     def smooth(self, amount):
         """
         A method to apply smoothing to the surface using the polySmooth function.
