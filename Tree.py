@@ -48,7 +48,7 @@ class IntInput:
             maxValue (int): The maximum value for the intSliderGrp.
             defaultValue (int, optional): The default value for the intSliderGrp. Defaults to 0.
         """
-        self.inpControl = cmds.intSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue)
+        self.inpControl = cmds.intSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue, cw=[1, 350])
     def getValue(self):
         """
         A function that retrieves the value of an intSliderGrp control.
@@ -73,7 +73,7 @@ class FloatInput:
             maxValue (int): The maximum value for the floatSliderGrp.
             defaultValue (int, optional): The default value for the floatSliderGrp. Defaults to 0.
         """
-        self.inpControl = cmds.floatSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue, cw=[1, 300])
+        self.inpControl = cmds.floatSliderGrp(l=name, f=1, min=minValue, max=maxValue, v=defaultValue, cw=[1, 350])
     def getValue(self):
         """
         A method to get the value from a float slider group control.
@@ -111,13 +111,13 @@ class terrainUI:
         Create the UI for terrain generation with input fields for name, width, depth, subdivisions, tree variants, amplitude, tolerance, seed, and buttons to generate and cancel.
         """
         self.WinControl = cmds.window(t="Forest UI")
-        cmds.columnLayout(adj=True)
         self.NameInput = TextInput("Name of terrain", "Terrain")
-        self.WidthInput = IntInput("Width of terrain", 1, 2000, 150)
-        self.DepthInput = IntInput("Depth of terrain", 1, 2000, 150)
+        cmds.columnLayout(adj=True, cat=["both", 0])
         self.TreesExist = BoolInput("Generate Trees", True)
         self.GrassExist = BoolInput("Generate Grass", True)
         self.FireFliesExist = BoolInput("Generate Fireflies", True)
+        self.WidthInput = IntInput("Width of terrain", 1, 2000, 150)
+        self.DepthInput = IntInput("Depth of terrain", 1, 2000, 150)
         self.TreeVariants = IntInput("Number of different types of trees to use", 1, 10, 4)
         self.Amplitude = FloatInput("Difference between highest point and lowest point in terrain", 1, 10, 5)
         self.TreeDensity = FloatInput("Percentage of space to generate trees", 0, 1, 0.4)
