@@ -15,10 +15,10 @@ class TextInput:
         """
         # if the input can be set to "" then the default must be set and the input must check for if it has been left empty
         if not nullable:
-            self.inpControl = cmds.textFieldGrp(label=name, tx=default, tcc=self.checkEmpty)
+            self.inpControl = cmds.textFieldGrp(name, label=name, tx=default, tcc=self.checkEmpty).split("|")[-1]
             self.default = default
         else:
-            self.inpControl = cmds.textFieldGrp(label=name, tx=default)
+            self.inpControl = cmds.textFieldGrp(name, label=name, tx=default)
     def checkEmpty(self, *args):
         """
         Check if the value is empty and update the text field if necessary.
@@ -35,7 +35,8 @@ class TextInput:
         """
         Method to get the value using cmds.textFieldGrp, and return the result.
         """
-        return cmds.textFieldGrp(self.inpControl, q=1, tx=1)
+        print(self.inpControl)
+        return cmds.textFieldGrp(self.inpControl, q=1, tx=1).replace(" ", "_")
 
 class IntInput:
     def __init__(self, name, minValue, maxValue, defaultValue = 0):
@@ -456,8 +457,8 @@ class Terrain:
             cmds.hyperShade("FireFly" + str(i), a="FireFlyMat")
             currentPosition = [
                 r.uniform(2, 50),
-                r.uniform(-xSize / 2, xSize / 2),
                 r.uniform(-ySize / 2, ySize / 2),
+                r.uniform(-xSize / 2, xSize / 2),
             ]
             cmds.rotate("0deg", "0deg", "0deg", "FireFly" + str(i))
             cmds.move(currentPosition[0], currentPosition[1], currentPosition[2], "FireFly" + str(i))
