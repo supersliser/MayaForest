@@ -348,7 +348,7 @@ class Tree:
                 cmds.parent(newName, branch)
                 self.createBranch(i - dec, dec, newName, den * (1 + den), height)
                 cmds.xform(newName,ws=1,rp=point[0], ro=(f"{str(r.uniform(0, 45))}deg",f"{str(r.uniform(0, 360) * num)}deg",0))
-                self.createAnim(newName,cmds.xform(newName, q=1, ro=1))
+                # self.createAnim(newName,cmds.xform(newName, q=1, ro=1))
                 self.sweepCurve(newName, point[0], self.radius * 0.5 * point[1], i)
                 num+= 1
         elif branch != self.name:
